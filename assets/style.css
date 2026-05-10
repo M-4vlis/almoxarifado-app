@@ -1,0 +1,292 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background: #f4f5f7;
+
+    color: #1f2937;
+
+    padding: 16px;
+
+}
+
+/* =========================
+CONTAINER
+========================= */
+
+.container {
+
+    width: 100%;
+
+    max-width: 700px;
+
+    margin: 0 auto;
+
+}
+
+/* =========================
+HEADER
+========================= */
+
+header {
+
+    margin-bottom: 24px;
+
+}
+
+header h1 {
+
+    font-size: 2rem;
+
+    margin-bottom: 8px;
+
+    color: #111827;
+
+}
+
+header p {
+
+    color: #6b7280;
+
+    font-size: 1rem;
+
+}
+
+/* =========================
+CARDS
+========================= */
+
+.card {
+
+    background: white;
+
+    border-radius: 18px;
+
+    padding: 18px;
+
+    margin-bottom: 18px;
+
+    box-shadow:
+        0 2px 10px rgba(0,0,0,0.06);
+
+}
+
+/* =========================
+LABELS
+========================= */
+
+label {
+
+    display: block;
+
+    font-weight: bold;
+
+    margin-bottom: 10px;
+
+    font-size: 1rem;
+
+}
+
+/* =========================
+INPUTS
+========================= */
+
+select,
+input {
+
+    width: 100%;
+
+    border: 2px solid #d1d5db;
+
+    border-radius: 14px;
+
+    padding: 16px;
+
+    font-size: 1rem;
+
+    background: white;
+
+    transition: 0.2s;
+
+}
+
+input:focus,
+select:focus {
+
+    outline: none;
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 4px rgba(37,99,235,0.15);
+
+}
+
+/* =========================
+RESULTADOS
+========================= */
+
+#resultados {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 14px;
+
+}
+
+/* =========================
+ITEM RESULTADO
+========================= */
+
+.resultado-item {
+
+    background: white;
+
+    border-radius: 18px;
+
+    padding: 18px;
+
+    box-shadow:
+        0 2px 10px rgba(0,0,0,0.06);
+
+    border-left: 6px solid transparent;
+
+    animation: fadeIn 0.2s ease;
+
+}
+
+/* =========================
+STATUS
+========================= */
+
+.disponivel {
+
+    border-left-color: #16a34a;
+
+}
+
+.indisponivel {
+
+    border-left-color: #dc2626;
+
+}
+
+/* =========================
+CÓDIGO
+========================= */
+
+.codigo {
+
+    font-size: 0.95rem;
+
+    color: #6b7280;
+
+    margin-bottom: 10px;
+
+    word-break: break-word;
+
+}
+
+/* =========================
+DESCRIÇÃO
+========================= */
+
+.descricao {
+
+    font-size: 1.1rem;
+
+    font-weight: bold;
+
+    line-height: 1.4;
+
+    margin-bottom: 14px;
+
+}
+
+/* =========================
+STATUS TEXTO
+========================= */
+
+.status {
+
+    font-size: 1rem;
+
+    font-weight: 500;
+
+}
+
+/* =========================
+ANIMAÇÃO
+========================= */
+
+@keyframes fadeIn {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(4px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+
+/* =========================
+MOBILE EXTRA
+========================= */
+
+@media (max-width: 480px) {
+
+    body {
+
+        padding: 12px;
+
+    }
+
+    header h1 {
+
+        font-size: 1.7rem;
+
+    }
+
+    .card {
+
+        padding: 16px;
+
+    }
+
+    input,
+    select {
+
+        padding: 15px;
+
+        font-size: 16px;
+
+    }
+
+    .descricao {
+
+        font-size: 1rem;
+
+    }
+
+}

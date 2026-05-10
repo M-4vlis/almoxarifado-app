@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Consulta Almoxarifado</title>
+
+    <link rel="stylesheet" href="assets/style.css">
+
+</head>
+
+<body>
+
+    <main class="container">
+
+        <h1 class="titulo">
+            Consulta de Materiais
+        </h1>
+
+        <p class="subtitulo">
+            Consulte materiais disponíveis nos almoxarifados
+        </p>
+
+        <!-- SELEÇÃO -->
+        <section class="card">
+
+            <label for="almoxarifado">
+                Almoxarifado
+            </label>
+
+            <select id="almoxarifado">
+
+                <option value="CENTRAL">
+                    CENTRAL
+                </option>
+
+                <option value="SUB">
+                    SUB
+                </option>
+
+                <option value="BENFICA">
+                    BENFICA
+                </option>
+
+            </select>
+
+        </section>
+
+        <!-- BUSCA -->
+        <section class="card">
+
+            <label for="busca">
+                Buscar material
+            </label>
+
+            <input
+                type="text"
+                id="busca"
+                placeholder="Digite código ou nome do material"
+            >
+
+        </section>
+
+        <!-- RESULTADOS -->
+        <section
+            id="resultados"
+            class="resultados"
+        >
+
+        </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+
+    <script src="assets/app.js"></script>
+
+</body>
+
+</html>
