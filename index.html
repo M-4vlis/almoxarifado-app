@@ -1,35 +1,84 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 
 <head>
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <title>Consulta Almoxarifado</title>
+    <title>
+        Almoxarifado Inteligente
+    </title>
 
-    <link rel="stylesheet" href="assets/style.css">
+    <!-- GOOGLE FONTS -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- ICONS -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- CSS -->
+    <link
+        rel="stylesheet"
+        href="assets/style.css"
+    >
 
 </head>
 
 <body>
 
-    <main class="container">
+    <div class="container">
 
-        <h1 class="titulo">
-            Consulta de Materiais
-        </h1>
+        <!-- HEADER -->
 
-        <p class="subtitulo">
-            Consulte materiais disponíveis nos almoxarifados
-        </p>
+        <header>
 
-        <!-- SELEÇÃO -->
-        <section class="card">
+            <div class="logo">
+
+                <i class="fa-solid fa-boxes-stacked"></i>
+
+            </div>
+
+            <h1>
+                Almoxarifado Inteligente
+            </h1>
+
+            <p>
+                Consulte materiais rapidamente
+                em todos os almoxarifados.
+            </p>
+
+        </header>
+
+        <!-- FILTROS -->
+
+        <div class="card">
 
             <label for="almoxarifado">
+
                 Almoxarifado
+
             </label>
 
             <select id="almoxarifado">
@@ -48,35 +97,58 @@
 
             </select>
 
-        </section>
+        </div>
 
         <!-- BUSCA -->
-        <section class="card">
+
+        <div class="card">
 
             <label for="busca">
+
                 Buscar material
+
             </label>
 
-            <input
-                type="text"
-                id="busca"
-                placeholder="Digite código ou nome do material"
-            >
+            <div class="input-wrapper">
 
-        </section>
+                <i class="fa-solid fa-magnifying-glass"></i>
 
-        <!-- RESULTADOS -->
-        <section
-            id="resultados"
-            class="resultados"
+                <input
+                    type="text"
+                    id="busca"
+                    placeholder="Digite código ou descrição..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+        </div>
+
+        <!-- LOADING -->
+
+        <div
+            id="loading"
+            class="loading hidden"
         >
 
-        </section>
+            <div class="spinner"></div>
 
-    </main>
+            <span>
+                Carregando materiais...
+            </span>
 
+        </div>
+
+        <!-- RESULTADOS -->
+
+        <div id="resultados"></div>
+
+    </div>
+
+    <!-- FUSE -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
 
+    <!-- APP -->
     <script src="assets/app.js"></script>
 
 </body>

@@ -15,6 +15,9 @@ const selectAlmoxarifado =
 const divResultados =
     document.getElementById("resultados")
 
+const divLoading =
+    document.getElementById("loading")
+
 // =========================
 // NORMALIZA TEXTO
 // =========================
@@ -33,7 +36,7 @@ function normalizarTexto(texto) {
 // =========================
 
 async function carregarMateriais() {
-
+    divLoading.classList.remove("hidden")
     try {
 
         const resposta =
@@ -98,7 +101,7 @@ async function carregarMateriais() {
             ]
 
         })
-
+    divLoading.classList.add("hidden")
     } catch (erro) {
 
         console.error(
@@ -339,9 +342,13 @@ function buscarMateriais() {
 
         divResultados.innerHTML = `
 
-            <div class="resultado-item">
+            <div class="empty-state">
 
-                Nenhum material encontrado.
+                <i class="fa-regular fa-face-frown"></i>
+
+                <p>
+                    Nenhum material encontrado.
+                </p>
 
             </div>
 
