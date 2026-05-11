@@ -8061,7 +8061,7 @@
         "codigo": "200006003",
         "descricao": "FITA CREPE MEDINDO 48MM X 50M",
         "almoxarifado": "SUB",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200004119",
@@ -8775,7 +8775,7 @@
         "codigo": "200001978",
         "descricao": "LUVA SIMPLES DE ESGOTO SN DN 75 MM",
         "almoxarifado": "SUB",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200001980",
@@ -9675,7 +9675,7 @@
         "codigo": "200001599",
         "descricao": "ROLO DE ESPUMA DE 9CM COM CABO",
         "almoxarifado": "SUB",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200001619",
@@ -10548,6 +10548,24 @@
         "disponivel": false
     },
     {
+        "codigo": "200007112",
+        "descricao": "ARGAMASSA AUTONIVELANTE PARA REGULARIZAÇÃO DE PISO COM ACABAMENTO LISO - SACO COM 20KG",
+        "almoxarifado": "BENFICA",
+        "disponivel": true
+    },
+    {
+        "codigo": "200007113",
+        "descricao": "ARGAMASSA COLANTE E CIMENTÍCIA PARA ASSENTAMENTO DE CERÂMICAS E PORCELANATOS EM ÁREAS INTERNAS, EXTERNAS E FACHADAS - ARGAMASSA FLEXÍVEL CINZA ACIII - SACO COM 20KG.",
+        "almoxarifado": "BENFICA",
+        "disponivel": true
+    },
+    {
+        "codigo": "200006710",
+        "descricao": "ARGAMASSA COLANTE MULTIUSO, PARA ÁREA EXTERNA, SACO DE 20KG, ACII",
+        "almoxarifado": "BENFICA",
+        "disponivel": true
+    },
+    {
         "codigo": "200007110",
         "descricao": "ASSOALHO DE MADEIRA IPÊ OU MAÇARANDUBA NA MEDIDA DE 14X2X300CM.",
         "almoxarifado": "BENFICA",
@@ -10574,6 +10592,12 @@
     {
         "codigo": "200001206",
         "descricao": "FECHADURA COR PRETA, PARA DIVISÓRIA",
+        "almoxarifado": "BENFICA",
+        "disponivel": true
+    },
+    {
+        "codigo": "200006304",
+        "descricao": "MASSA PARA DRYWALL EM PÓ - SACO DE 20KG",
         "almoxarifado": "BENFICA",
         "disponivel": true
     },
@@ -10640,6 +10664,12 @@
     {
         "codigo": "200004193",
         "descricao": "PERNA DE MADEIRA PERNA DE 3, 6 CM X 6 CM",
+        "almoxarifado": "BENFICA",
+        "disponivel": false
+    },
+    {
+        "codigo": "200004118",
+        "descricao": "PLACA DE GESSO ACARTONADO, MED. 1200 X 1800 X 12,5MM, COR BRANCA",
         "almoxarifado": "BENFICA",
         "disponivel": false
     },
