@@ -89,6 +89,95 @@ const btnEnviarWhatsapp =
     document.getElementById("btnEnviarWhatsapp")
 
 // =========================
+// TOAST
+// =========================
+
+function mostrarToast(texto) {
+
+    const toast =
+        document.createElement("div")
+
+    toast.classList.add("toast")
+
+    toast.innerHTML = `
+        <i class="fa-solid fa-circle-check"></i>
+        <span>${texto}</span>
+    `
+
+    document.body.appendChild(toast)
+
+    setTimeout(() => {
+
+        toast.classList.add("toast-show")
+
+    }, 50)
+
+    setTimeout(() => {
+
+        toast.classList.remove("toast-show")
+
+        setTimeout(() => {
+
+            toast.remove()
+
+        }, 300)
+
+    }, 2200)
+
+}
+
+// =========================
+// ANIMAÇÃO CARRINHO
+// =========================
+
+function animarCarrinho() {
+
+    btnCarrinho.classList.add(
+        "pulse-carrinho"
+    )
+
+    setTimeout(() => {
+
+        btnCarrinho.classList.remove(
+            "pulse-carrinho"
+        )
+
+    }, 450)
+
+}
+
+// =========================
+// PERSISTÊNCIA LOCAL
+// =========================
+
+function salvarCarrinhoLocal() {
+
+    localStorage.setItem(
+        "listaSolicitacao",
+        JSON.stringify(listaSolicitacao)
+    )
+
+}
+
+function carregarCarrinhoLocal() {
+
+    const dados =
+        localStorage.getItem(
+            "listaSolicitacao"
+        )
+
+    if (dados) {
+
+        listaSolicitacao =
+            JSON.parse(dados)
+
+        atualizarCarrinho()
+
+    }
+
+}
+
+// =========================
 // CARREGA JSON
 // =========================
 
@@ -269,6 +358,11 @@ btnAdicionarLista.addEventListener(
 
         }
 
+        btnAdicionarLista.innerHTML = `
+            <i class="fa-solid fa-check"></i>
+            Adicionado
+        `
+
         const itemExistente =
             listaSolicitacao.find(item => {
 
@@ -304,9 +398,29 @@ btnAdicionarLista.addEventListener(
 
         }
 
+        salvarCarrinhoLocal()
+
         atualizarCarrinho()
 
-        modal.classList.add("hidden")
+        animarCarrinho()
+
+        mostrarToast(
+            "Material adicionado à lista"
+        )
+
+        // =========================
+        // LIMPA BUSCA
+        // =========================
+
+        campoBusca.value = ""
+
+        divResultados.innerHTML = ""
+
+        setTimeout(() => {
+
+            modal.classList.add("hidden")
+
+        }, 450)
 
     }
 )
@@ -462,6 +576,8 @@ function aumentarQuantidade(codigo) {
 
     }
 
+    salvarCarrinhoLocal()
+
     atualizarCarrinho()
 
 }
@@ -491,6 +607,8 @@ function diminuirQuantidade(codigo) {
 
     }
 
+    salvarCarrinhoLocal()
+
     atualizarCarrinho()
 
 }
@@ -507,6 +625,8 @@ function removerItem(codigo) {
             return item.codigo !== codigo
 
         })
+
+    salvarCarrinhoLocal()
 
     atualizarCarrinho()
 
@@ -623,29 +743,40 @@ function gerarMensagemWhatsapp() {
 
     }
 
-    let mensagem = `📦 *SOLICITAÇÃO DE MATERIAL*\n\n`
+    let mensagem =
+        `📦 *SOLICITAÇÃO DE MATERIAL*\n\n`
 
-    mensagem += `🎫 *GLPI:* ${glpi}\n\n`
+    mensagem +=
+        `🎫 *GLPI:* ${glpi}\n\n`
 
-    mensagem += `👤 *RETIRADA:*\n`
+    mensagem +=
+        `👤 *RETIRADA:*\n`
 
-    mensagem += `${nome}\n`
+    mensagem +=
+        `${nome}\n`
 
-    mensagem += `Matrícula: ${matricula}\n\n`
+    mensagem +=
+        `Matrícula: ${matricula}\n\n`
 
-    mensagem += `📍 *LOCAL:*\n`
+    mensagem +=
+        `📍 *LOCAL:*\n`
 
-    mensagem += `${local}\n\n`
+    mensagem +=
+        `${local}\n\n`
 
-    mensagem += `🧾 *MATERIAIS:*\n\n`
+    mensagem +=
+        `🧾 *MATERIAIS:*\n\n`
 
     listaSolicitacao.forEach(item => {
 
-        mensagem += `• ${item.quantidade}x ${item.descricao}\n`
+        mensagem +=
+            `• ${item.quantidade}x ${item.descricao}\n`
 
-        mensagem += `Código: ${item.codigo}\n`
+        mensagem +=
+            `Código: ${item.codigo}\n`
 
-        mensagem += `Almoxarifado: ${item.almoxarifado}\n\n`
+        mensagem +=
+            `Almoxarifado: ${item.almoxarifado}\n\n`
 
     })
 
@@ -706,55 +837,25 @@ function buscarMateriais() {
 
     }
 
-    const buscaPorCodigo =
+    const buscaNumerica =
         /^\d+$/.test(textoBusca)
 
     let resultados = []
 
-    // =========================
-    // BUSCA POR CÓDIGO
-    // =========================
+    if (buscaNumerica) {
 
-    if (buscaPorCodigo) {
-
-        const codigoEncontrado =
+        resultados =
             materiais.filter(material => {
 
-                return material.codigo
-                    .toLowerCase()
-                    .endsWith(textoBusca)
+                return (
+                    material.codigo
+                        .toLowerCase()
+                        .includes(textoBusca)
+                )
 
             })
 
-        // encontrou códigos compatíveis
-        // mostra apenas eles
-
-        if (codigoEncontrado.length > 0) {
-
-            resultados = codigoEncontrado
-
-        }
-
-        // ainda não encontrou
-        // mantém sugestões inteligentes
-
-        else {
-
-            resultados =
-                fuse.search(textoBusca)
-
-            resultados =
-                resultados.map(
-                    resultado => resultado.item
-                )
-
-        }
-
     }
-
-    // =========================
-    // BUSCA POR DESCRIÇÃO
-    // =========================
 
     else {
 
@@ -767,10 +868,6 @@ function buscarMateriais() {
             )
 
     }
-
-    // =========================
-    // VERIFICA DISPONIBILIDADE
-    // =========================
 
     const existeDisponivelNoSelecionado =
         resultados.some(material => {
@@ -786,10 +883,6 @@ function buscarMateriais() {
 
         })
 
-    // =========================
-    // FILTRA ALMOXARIFADO
-    // =========================
-
     if (existeDisponivelNoSelecionado) {
 
         resultados =
@@ -803,10 +896,6 @@ function buscarMateriais() {
             })
 
     }
-
-    // =========================
-    // ORDENA
-    // =========================
 
     resultados.sort((a, b) => {
 
@@ -825,10 +914,6 @@ function buscarMateriais() {
         return 0
 
     })
-
-    // =========================
-    // REMOVE DUPLICADOS
-    // =========================
 
     const materiaisUnicos = []
 
@@ -856,9 +941,25 @@ function buscarMateriais() {
 
     })
 
-    // =========================
-    // SEM RESULTADOS
-    // =========================
+    if (
+        buscaNumerica &&
+        materiaisUnicos.length > 0
+    ) {
+
+        const encontrouDisponivel =
+            materiaisUnicos.some(material => {
+
+                return material.disponivel
+
+            })
+
+        if (!encontrouDisponivel) {
+
+            materiaisUnicos.splice(1)
+
+        }
+
+    }
 
     if (materiaisUnicos.length === 0) {
 
@@ -879,10 +980,6 @@ function buscarMateriais() {
         return
 
     }
-
-    // =========================
-    // RENDERIZA
-    // =========================
 
     materiaisUnicos.forEach(material => {
 
@@ -984,3 +1081,5 @@ selectAlmoxarifado.addEventListener(
 // =========================
 
 carregarMateriais()
+
+carregarCarrinhoLocal()
