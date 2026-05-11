@@ -836,6 +836,32 @@ btnEnviarWhatsapp.addEventListener(
             "_blank"
         )
 
+        // =========================
+        // LIMPA DADOS APÓS ENVIO
+        // =========================
+
+        listaSolicitacao = []
+
+        salvarCarrinhoLocal()
+
+        atualizarCarrinho()
+
+        campoGLPI.value = ""
+
+        campoNome.value = ""
+
+        campoMatricula.value = ""
+
+        campoLocal.value = ""
+
+        drawerCarrinho.classList.add(
+            "hidden"
+        )
+
+        mostrarToast(
+            "Solicitação enviada com sucesso"
+        )
+
     }
 )
 
