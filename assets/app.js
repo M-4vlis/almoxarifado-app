@@ -245,26 +245,50 @@ async function carregarMateriais() {
 
 function carregarImagemMaterial(codigo) {
 
-    const jpg =
-        `assets/imagens/${codigo}.jpg`
+    const caminhos = [
 
-    const png =
+        `assets/imagens/${codigo}.jpg`,
         `assets/imagens/${codigo}.png`
 
-    modalImagem.src = jpg
+    ]
 
-    modalImagem.onerror = () => {
+    let indiceAtual = 0
 
-        modalImagem.onerror = () => {
+    function tentarProximaImagem() {
+
+        if (indiceAtual >= caminhos.length) {
 
             modalImagem.src =
                 "assets/imagens/placeholder.png"
 
+            return
+
         }
 
-        modalImagem.src = png
+        const imgTeste =
+            new Image()
+
+        imgTeste.onload = () => {
+
+            modalImagem.src =
+                caminhos[indiceAtual]
+
+        }
+
+        imgTeste.onerror = () => {
+
+            indiceAtual++
+
+            tentarProximaImagem()
+
+        }
+
+        imgTeste.src =
+            caminhos[indiceAtual]
 
     }
+
+    tentarProximaImagem()
 
 }
 
