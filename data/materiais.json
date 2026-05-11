@@ -1002,6 +1002,12 @@
         "disponivel": false
     },
     {
+        "codigo": "200007279",
+        "descricao": "CAIBRO DE CAMBARA DE 5 X 5 X 300 CM",
+        "almoxarifado": "CENTRAL",
+        "disponivel": true
+    },
+    {
         "codigo": "200005831",
         "descricao": "CAIBRO DE IPÊ DE 6 X 6 X 300 CM",
         "almoxarifado": "CENTRAL",
@@ -2022,16 +2028,16 @@
         "disponivel": false
     },
     {
-        "codigo": "200000890",
-        "descricao": "DOBRADIÇA PARA PORTA DE DIVISÓRIA NA COR PRETA",
-        "almoxarifado": "CENTRAL",
-        "disponivel": false
-    },
-    {
         "codigo": "200000288",
         "descricao": "DOBRADIÇA PARA PORTA DE DIVISÓRIA NA COR PRETA",
         "almoxarifado": "CENTRAL",
         "disponivel": true
+    },
+    {
+        "codigo": "200000890",
+        "descricao": "DOBRADIÇA PARA PORTA DE DIVISÓRIA NA COR PRETA",
+        "almoxarifado": "CENTRAL",
+        "disponivel": false
     },
     {
         "codigo": "200000292",
@@ -2808,16 +2814,16 @@
         "disponivel": true
     },
     {
-        "codigo": "200001962",
-        "descricao": "JOELHO DE PVC DE 90 SOLDÁVEL, COM BUCHA DE LATÃO, DE 25 X 3/4",
-        "almoxarifado": "CENTRAL",
-        "disponivel": true
-    },
-    {
         "codigo": "200000414",
         "descricao": "JOELHO DE PVC DE 90 SOLDÁVEL, COM BUCHA DE LATÃO, DE 25 X 3/4",
         "almoxarifado": "CENTRAL",
         "disponivel": false
+    },
+    {
+        "codigo": "200001962",
+        "descricao": "JOELHO DE PVC DE 90 SOLDÁVEL, COM BUCHA DE LATÃO, DE 25 X 3/4",
+        "almoxarifado": "CENTRAL",
+        "disponivel": true
     },
     {
         "codigo": "200000415",
@@ -3930,13 +3936,13 @@
         "disponivel": false
     },
     {
-        "codigo": "200002154",
+        "codigo": "200002138",
         "descricao": "PARAFUSO CABEÇA SEXTAVADA 5/16X80",
         "almoxarifado": "CENTRAL",
         "disponivel": false
     },
     {
-        "codigo": "200002138",
+        "codigo": "200002154",
         "descricao": "PARAFUSO CABEÇA SEXTAVADA 5/16X80",
         "almoxarifado": "CENTRAL",
         "disponivel": false
@@ -4407,7 +4413,7 @@
         "codigo": "200004167",
         "descricao": "PORTA DE MADEIRA, LISA, MED. 2,10M X 0,90M",
         "almoxarifado": "CENTRAL",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200003885",
@@ -5023,7 +5029,7 @@
     },
     {
         "codigo": "200006330",
-        "descricao": "ROLO DE 23CM DE LÃ DE POLIÉSTER 5MM",
+        "descricao": "ROLO DE 23CM DE LÃ DE POLIÉSTER, ALTURA 5MM",
         "almoxarifado": "CENTRAL",
         "disponivel": false
     },
@@ -6357,7 +6363,7 @@
         "codigo": "200002166",
         "descricao": "TÁBUA DE CEDRINHO OU PINUS 300 X 30 X 2,5CM, APARELHADA",
         "almoxarifado": "CENTRAL",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200005832",
@@ -6885,7 +6891,7 @@
         "codigo": "200002344",
         "descricao": "ADAPTADOR SOLDÁVEL COM BOLSA ROSCÁVEL, DE 32 MM X 1''",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200001357",
@@ -7185,7 +7191,7 @@
         "codigo": "200003612",
         "descricao": "BUCHA DE REDUÇÃO ROSCÁVEL DE 1.1/2'' X 1.1/4''",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200003610",
@@ -7335,7 +7341,7 @@
         "codigo": "200000175",
         "descricao": "CAP DE PVC, ROSCÁVEL, DE 1/2",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200003626",
@@ -7791,19 +7797,19 @@
         "codigo": "200001940",
         "descricao": "CURVA DE PVC DE 90 LONGA P/ ESGOTO, SN - DN 40 MM",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200001941",
         "descricao": "CURVA DE PVC DE 90 LONGA P/ ESGOTO, SN - DN 50 MM",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200001942",
         "descricao": "CURVA DE PVC DE 90 LONGA P/ ESGOTO, SN - DN 75 MM",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200000256",
@@ -7833,7 +7839,7 @@
         "codigo": "200000258",
         "descricao": "CURVA DE PVC DE 90 SOLDÁVEL DE 60 MM",
         "almoxarifado": "SUB",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200002126",
@@ -8145,7 +8151,7 @@
         "codigo": "200002209",
         "descricao": "GRELHA PARA RALO QUADRADO COM CAIXILHO INOX 15 CM",
         "almoxarifado": "SUB",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200002210",
@@ -8175,7 +8181,7 @@
         "codigo": "200002341",
         "descricao": "JOELHO DE PVC DE 45 ESGOTO PRIM - DN 100 MM",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200001952",
@@ -8235,7 +8241,7 @@
         "codigo": "200000410",
         "descricao": "JOELHO DE PVC DE 45 SOLDÁVEL DE 20MM",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200000411",
@@ -8313,7 +8319,7 @@
         "codigo": "200001574",
         "descricao": "JOELHO DE PVC DE 90 SOLDÁVEL DE 20 MM",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200001957",
@@ -8385,7 +8391,7 @@
         "codigo": "200001956",
         "descricao": "JOELHO DE PVC DE 90, SÉRIE NORMAL, DE 100MM",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200001026",
@@ -8529,7 +8535,7 @@
         "codigo": "200002716",
         "descricao": "LIXA MULTIUSO, Nº 100",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200002717",
@@ -8631,7 +8637,7 @@
         "codigo": "200002000",
         "descricao": "LUVA DE CORRER PARA TUBO ROSCÁVEL 3/4",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200001986",
@@ -8835,7 +8841,7 @@
         "codigo": "200000474",
         "descricao": "LUVA SOLDÁVEL, COM ROSCA, DE 25 X 3/4",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200002820",
@@ -8931,7 +8937,7 @@
         "codigo": "200000503",
         "descricao": "NIPEL DE PVC ROSCÁVEL DE 1/2",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200003652",
@@ -9099,7 +9105,7 @@
         "codigo": "200005824",
         "descricao": "PARAFUSO DRYWALL, CABEÇA DE TROMBETA, PONTA AGULHA, 3,5 X 45MM (EMBALAGEM COM 100 UNIDADES)",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200002137",
@@ -9267,7 +9273,7 @@
         "codigo": "200000547",
         "descricao": "PLUGUE ROSCÁVEL DE 1/2",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200003655",
@@ -9579,7 +9585,7 @@
         "codigo": "200000590",
         "descricao": "REGISTRO DE ESFERA VS, SOLDÁVEL, DE 60MM",
         "almoxarifado": "SUB",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200000593",
@@ -10083,13 +10089,13 @@
         "codigo": "200002219",
         "descricao": "TORNEIRA BÓIA PRESSÃO BALÃO METÁLICO 1.1/2''",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200002220",
         "descricao": "TORNEIRA BÓIA PRESSÃO BALÃO METÁLICO 1.1/4''",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200002823",
