@@ -7,22 +7,31 @@
 :root {
 
     --bg:
-        #0f172a;
+        #f1f5f9;
+
+    --bg-secondary:
+        #ffffff;
 
     --card:
-        #1e293b;
+        rgba(255,255,255,0.75);
 
     --card-hover:
-        #273449;
+        rgba(255,255,255,0.9);
 
     --border:
-        rgba(255,255,255,0.06);
+        rgba(15,23,42,0.08);
 
     --text:
-        #f8fafc;
+        #0f172a;
 
     --muted:
-        #94a3b8;
+        #64748b;
+
+    --blue:
+        #2563eb;
+
+    --blue-light:
+        #3b82f6;
 
     --green:
         #22c55e;
@@ -30,8 +39,47 @@
     --red:
         #ef4444;
 
-    --blue:
-        #3b82f6;
+    --shadow:
+        0 10px 30px rgba(15,23,42,0.08);
+
+    --glass:
+        blur(16px);
+
+}
+
+/* =========================
+DARK MODE
+========================= */
+
+@media (prefers-color-scheme: dark) {
+
+    :root {
+
+        --bg:
+            #020617;
+
+        --bg-secondary:
+            #0f172a;
+
+        --card:
+            rgba(15,23,42,0.72);
+
+        --card-hover:
+            rgba(30,41,59,0.95);
+
+        --border:
+            rgba(255,255,255,0.06);
+
+        --text:
+            #f8fafc;
+
+        --muted:
+            #94a3b8;
+
+        --shadow:
+            0 10px 30px rgba(0,0,0,0.35);
+
+    }
 
 }
 
@@ -48,15 +96,17 @@ body {
     background:
         linear-gradient(
             180deg,
-            #0f172a,
-            #111827
+            var(--bg),
+            var(--bg-secondary)
         );
 
     color: var(--text);
 
     min-height: 100vh;
 
-    padding: 14px;
+    padding: 16px;
+
+    -webkit-font-smoothing: antialiased;
 
 }
 
@@ -68,7 +118,7 @@ CONTAINER
 
     width: 100%;
 
-    max-width: 680px;
+    max-width: 720px;
 
     margin: 0 auto;
 
@@ -80,27 +130,30 @@ HEADER
 
 header {
 
-    margin-bottom: 18px;
-
     text-align: center;
+
+    margin-bottom: 22px;
+
+    animation:
+        fadeUp 0.35s ease;
 
 }
 
 .logo {
 
-    width: 58px;
+    width: 64px;
 
-    height: 58px;
+    height: 64px;
 
-    margin: 0 auto 14px;
+    margin: 0 auto 16px;
 
-    border-radius: 18px;
+    border-radius: 22px;
 
     background:
         linear-gradient(
             135deg,
-            #2563eb,
-            #3b82f6
+            var(--blue),
+            var(--blue-light)
         );
 
     display: flex;
@@ -110,25 +163,27 @@ header {
     justify-content: center;
 
     box-shadow:
-        0 8px 20px rgba(37,99,235,0.25);
+        0 10px 25px rgba(37,99,235,0.35);
 
 }
 
 .logo i {
 
-    font-size: 1.4rem;
+    font-size: 1.5rem;
+
+    color: white;
 
 }
 
 header h1 {
 
-    font-size: 1.55rem;
+    font-size: 1.7rem;
 
     font-weight: 800;
 
-    margin-bottom: 6px;
+    letter-spacing: -0.8px;
 
-    letter-spacing: -0.5px;
+    margin-bottom: 8px;
 
 }
 
@@ -136,14 +191,14 @@ header p {
 
     color: var(--muted);
 
-    font-size: 0.92rem;
+    font-size: 0.95rem;
 
-    line-height: 1.4;
+    line-height: 1.5;
 
 }
 
 /* =========================
-CARD
+CARDS
 ========================= */
 
 .card {
@@ -153,29 +208,38 @@ CARD
     border:
         1px solid var(--border);
 
-    border-radius: 20px;
+    border-radius: 24px;
 
-    padding: 16px;
+    padding: 18px;
 
     margin-bottom: 14px;
+
+    backdrop-filter: var(--glass);
+
+    -webkit-backdrop-filter: var(--glass);
+
+    box-shadow: var(--shadow);
+
+    animation:
+        fadeUp 0.25s ease;
 
 }
 
 /* =========================
-LABEL
+LABELS
 ========================= */
 
 label {
 
     display: block;
 
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 
-    font-size: 0.9rem;
+    font-size: 0.92rem;
 
-    font-weight: 600;
+    font-weight: 700;
 
-    color: #cbd5e1;
+    color: var(--muted);
 
 }
 
@@ -193,13 +257,13 @@ INPUT WRAPPER
 
     position: absolute;
 
-    left: 16px;
-
     top: 50%;
+
+    left: 16px;
 
     transform: translateY(-50%);
 
-    color: #64748b;
+    color: var(--muted);
 
     font-size: 0.95rem;
 
@@ -210,7 +274,8 @@ INPUTS
 ========================= */
 
 input,
-select {
+select,
+textarea {
 
     width: 100%;
 
@@ -218,21 +283,21 @@ select {
 
     outline: none;
 
-    background:
-        rgba(255,255,255,0.05);
-
-    color: white;
-
-    border-radius: 16px;
+    border-radius: 18px;
 
     padding: 16px;
+
+    background:
+        rgba(148,163,184,0.08);
+
+    color: var(--text);
 
     font-size: 16px;
 
     transition: 0.2s;
 
     border:
-        1px solid rgba(255,255,255,0.05);
+        1px solid transparent;
 
 }
 
@@ -242,26 +307,22 @@ input {
 
 }
 
-input::placeholder {
+input::placeholder,
+textarea::placeholder {
 
-    color: #64748b;
+    color: var(--muted);
 
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
 
     border:
-        1px solid rgba(59,130,246,0.5);
+        1px solid rgba(37,99,235,0.45);
 
     background:
-        rgba(255,255,255,0.07);
-
-}
-
-option {
-
-    color: black;
+        rgba(37,99,235,0.05);
 
 }
 
@@ -277,19 +338,11 @@ LOADING
 
     justify-content: center;
 
-    gap: 10px;
+    gap: 12px;
 
     margin: 18px 0;
 
-    color: #cbd5e1;
-
-    font-size: 0.92rem;
-
-}
-
-.hidden {
-
-    display: none;
+    color: var(--muted);
 
 }
 
@@ -302,13 +355,19 @@ LOADING
     border-radius: 50%;
 
     border:
-        2px solid rgba(255,255,255,0.15);
+        2px solid rgba(148,163,184,0.2);
 
     border-top:
-        2px solid white;
+        2px solid var(--blue);
 
     animation:
         spin 0.8s linear infinite;
+
+}
+
+.hidden {
+
+    display: none !important;
 
 }
 
@@ -322,14 +381,14 @@ RESULTADOS
 
     flex-direction: column;
 
-    gap: 12px;
+    gap: 14px;
 
-    padding-bottom: 40px;
+    padding-bottom: 120px;
 
 }
 
 /* =========================
-RESULTADO ITEM
+CARD MATERIAL
 ========================= */
 
 .resultado-item {
@@ -339,26 +398,42 @@ RESULTADO ITEM
     border:
         1px solid var(--border);
 
-    border-radius: 18px;
+    border-radius: 24px;
 
-    padding: 16px;
+    padding: 18px;
 
-    transition: 0.2s;
+    backdrop-filter: var(--glass);
+
+    -webkit-backdrop-filter: var(--glass);
+
+    box-shadow: var(--shadow);
+
+    transition:
+        transform 0.15s ease,
+        background 0.2s ease;
 
     animation:
-        fadeUp 0.2s ease;
+        fadeUp 0.25s ease;
+
+    cursor: pointer;
+
+}
+
+.resultado-item:hover {
+
+    background: var(--card-hover);
 
 }
 
 .resultado-item:active {
 
     transform:
-        scale(0.99);
+        scale(0.985);
 
 }
 
 /* =========================
-STATUS LATERAL
+STATUS
 ========================= */
 
 .disponivel {
@@ -376,97 +451,524 @@ STATUS LATERAL
 }
 
 /* =========================
-CÓDIGO
+TEXTOS
 ========================= */
 
 .codigo {
 
     font-size: 0.78rem;
 
-    color: #94a3b8;
+    color: var(--muted);
 
     margin-bottom: 8px;
 
-    word-break: break-word;
-
 }
-
-/* =========================
-DESCRIÇÃO
-========================= */
 
 .descricao {
 
-    font-size: 0.98rem;
+    font-size: 1rem;
 
-    font-weight: 700;
+    font-weight: 800;
 
-    line-height: 1.4;
+    line-height: 1.45;
 
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 
 }
-
-/* =========================
-STATUS
-========================= */
 
 .status {
 
-    font-size: 0.88rem;
+    font-size: 0.9rem;
 
-    font-weight: 600;
+    font-weight: 700;
 
 }
 
 /* =========================
-EMPTY STATE
+EMPTY
 ========================= */
 
 .empty-state {
 
     text-align: center;
 
-    padding: 36px 20px;
+    padding: 40px 20px;
 
-    color: #cbd5e1;
+    color: var(--muted);
 
 }
 
 .empty-state i {
 
-    font-size: 2rem;
+    font-size: 2.2rem;
 
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 
     opacity: 0.7;
 
 }
 
-.empty-state p {
+/* =========================
+MODAL
+========================= */
 
-    font-size: 0.95rem;
+.modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    background:
+        rgba(0,0,0,0.65);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 18px;
+
+    z-index: 999;
+
+    backdrop-filter:
+        blur(6px);
+
+}
+
+.modal-content {
+
+    width: 100%;
+
+    max-width: 430px;
+
+    background: var(--bg-secondary);
+
+    border-radius: 28px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 20px 40px rgba(0,0,0,0.35);
+
+    animation:
+        modalUp 0.22s ease;
+
+    position: relative;
+
+}
+
+.fechar-modal {
+
+    position: absolute;
+
+    top: 14px;
+
+    right: 14px;
+
+    width: 40px;
+
+    height: 40px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background:
+        rgba(0,0,0,0.45);
+
+    color: white;
+
+    cursor: pointer;
+
+    z-index: 10;
+
+}
+
+.modal-imagem {
+
+    width: 100%;
+
+    height: 250px;
+
+    background:
+        #0f172a;
+
+}
+
+.modal-imagem img {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+}
+
+.modal-info {
+
+    padding: 22px;
+
+}
+
+.modal-codigo {
+
+    font-size: 0.82rem;
+
+    color: var(--muted);
+
+    margin-bottom: 10px;
+
+}
+
+.modal-descricao {
+
+    font-size: 1.12rem;
+
+    font-weight: 800;
 
     line-height: 1.5;
+
+    margin-bottom: 18px;
+
+}
+
+.modal-status {
+
+    font-size: 0.94rem;
+
+    font-weight: 700;
 
 }
 
 /* =========================
-SCROLLBAR
+BOTÕES
 ========================= */
 
-::-webkit-scrollbar {
+.btn-adicionar,
+.btn-enviar {
 
-    width: 8px;
+    width: calc(100% - 40px);
+
+    margin: 0 20px 20px;
+
+    border: none;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--blue),
+            var(--blue-light)
+        );
+
+    color: white;
+
+    padding: 17px;
+
+    font-size: 1rem;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        opacity 0.2s ease;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    box-shadow:
+        0 10px 20px rgba(37,99,235,0.25);
 
 }
 
-::-webkit-scrollbar-thumb {
+.btn-adicionar:active,
+.btn-enviar:active {
+
+    transform:
+        scale(0.985);
+
+}
+
+.btn-adicionar:disabled {
+
+    opacity: 0.45;
+
+    cursor: not-allowed;
+
+}
+
+/* =========================
+BOTÃO CARRINHO
+========================= */
+
+.btn-carrinho {
+
+    position: fixed;
+
+    right: 18px;
+
+    bottom: 18px;
+
+    width: 66px;
+
+    height: 66px;
+
+    border: none;
+
+    border-radius: 50%;
 
     background:
-        rgba(255,255,255,0.1);
+        linear-gradient(
+            135deg,
+            var(--blue),
+            var(--blue-light)
+        );
 
-    border-radius: 999px;
+    color: white;
+
+    font-size: 1.3rem;
+
+    cursor: pointer;
+
+    z-index: 998;
+
+    box-shadow:
+        0 15px 35px rgba(37,99,235,0.35);
+
+    animation:
+        floating 2.5s infinite ease-in-out;
+
+}
+
+/* =========================
+CONTADOR
+========================= */
+
+#contadorCarrinho {
+
+    position: absolute;
+
+    top: -4px;
+
+    right: -4px;
+
+    width: 24px;
+
+    height: 24px;
+
+    border-radius: 50%;
+
+    background: var(--red);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 0.72rem;
+
+    font-weight: 800;
+
+}
+
+/* =========================
+DRAWER
+========================= */
+
+.drawer {
+
+    position: fixed;
+
+    inset: 0;
+
+    background:
+        rgba(0,0,0,0.65);
+
+    z-index: 999;
+
+    display: flex;
+
+    align-items: flex-end;
+
+    backdrop-filter:
+        blur(6px);
+
+}
+
+.drawer-content {
+
+    width: 100%;
+
+    height: 85vh;
+
+    background: var(--bg-secondary);
+
+    border-radius: 32px 32px 0 0;
+
+    padding: 22px;
+
+    overflow-y: auto;
+
+    animation:
+        drawerUp 0.22s ease;
+
+}
+
+/* =========================
+DRAWER HEADER
+========================= */
+
+.drawer-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 24px;
+
+}
+
+.drawer-header h2 {
+
+    font-size: 1.25rem;
+
+    font-weight: 800;
+
+}
+
+.fechar-drawer {
+
+    width: 42px;
+
+    height: 42px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background:
+        rgba(148,163,184,0.12);
+
+    color: var(--text);
+
+    cursor: pointer;
+
+}
+
+/* =========================
+ITEM CARRINHO
+========================= */
+
+.item-carrinho {
+
+    background:
+        rgba(148,163,184,0.08);
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 22px;
+
+    padding: 16px;
+
+    margin-bottom: 14px;
+
+}
+
+.item-carrinho-codigo {
+
+    font-size: 0.76rem;
+
+    color: var(--muted);
+
+    margin-bottom: 8px;
+
+}
+
+.item-carrinho-descricao {
+
+    font-size: 0.95rem;
+
+    font-weight: 800;
+
+    line-height: 1.45;
+
+    margin-bottom: 16px;
+
+}
+
+.item-carrinho-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+}
+
+.quantidade {
+
+    font-size: 0.92rem;
+
+    font-weight: 700;
+
+}
+
+.btn-remover {
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: var(--red);
+
+    color: white;
+
+    padding: 11px 14px;
+
+    cursor: pointer;
+
+    font-size: 0.85rem;
+
+}
+
+/* =========================
+FORMULÁRIO
+========================= */
+
+.formulario {
+
+    margin-top: 28px;
+
+}
+
+.formulario h3 {
+
+    font-size: 1rem;
+
+    margin-bottom: 18px;
+
+    font-weight: 800;
+
+}
+
+.form-group {
+
+    margin-bottom: 16px;
 
 }
 
@@ -491,7 +993,7 @@ ANIMAÇÕES
         opacity: 0;
 
         transform:
-            translateY(6px);
+            translateY(10px);
 
     }
 
@@ -506,6 +1008,71 @@ ANIMAÇÕES
 
 }
 
+@keyframes modalUp {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(20px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0);
+
+    }
+
+}
+
+@keyframes drawerUp {
+
+    from {
+
+        transform:
+            translateY(100%);
+
+    }
+
+    to {
+
+        transform:
+            translateY(0);
+
+    }
+
+}
+
+@keyframes floating {
+
+    0% {
+
+        transform:
+            translateY(0px);
+
+    }
+
+    50% {
+
+        transform:
+            translateY(-4px);
+
+    }
+
+    100% {
+
+        transform:
+            translateY(0px);
+
+    }
+
+}
+
 /* =========================
 DESKTOP
 ========================= */
@@ -515,50 +1082,6 @@ DESKTOP
     body {
 
         padding: 28px;
-
-    }
-
-    header {
-
-        margin-bottom: 28px;
-
-    }
-
-    header h1 {
-
-        font-size: 2rem;
-
-    }
-
-    .logo {
-
-        width: 72px;
-
-        height: 72px;
-
-    }
-
-    .logo i {
-
-        font-size: 1.8rem;
-
-    }
-
-    .card {
-
-        padding: 20px;
-
-    }
-
-    .resultado-item {
-
-        padding: 20px;
-
-    }
-
-    .descricao {
-
-        font-size: 1.05rem;
 
     }
 

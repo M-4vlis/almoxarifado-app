@@ -145,10 +145,226 @@
 
     </div>
 
+    <!-- MODAL -->
+
+    <div
+        id="modal"
+        class="modal hidden"
+    >
+
+        <div class="modal-content">
+
+            <button
+                id="fecharModal"
+                class="fechar-modal"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+            <!-- IMAGEM -->
+
+            <div class="modal-imagem">
+
+                <img
+                    id="modalImagem"
+                    src="assets/imagens/placeholder.png"
+                    alt="Material"
+                >
+
+            </div>
+
+            <!-- INFORMAÇÕES -->
+
+            <div class="modal-info">
+
+                <div
+                    id="modalCodigo"
+                    class="modal-codigo"
+                ></div>
+
+                <div
+                    id="modalDescricao"
+                    class="modal-descricao"
+                ></div>
+
+                <div
+                    id="modalStatus"
+                    class="modal-status"
+                ></div>
+
+            </div>
+
+            <!-- BOTÃO -->
+
+            <button
+                id="btnAdicionarLista"
+                class="btn-adicionar"
+            >
+
+                <i class="fa-solid fa-cart-plus"></i>
+
+                Adicionar à Lista
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- BOTÃO CARRINHO -->
+
+    <button
+        id="btnCarrinho"
+        class="btn-carrinho hidden"
+    >
+
+        <i class="fa-solid fa-cart-shopping"></i>
+
+        <span id="contadorCarrinho">
+            0
+        </span>
+
+    </button>
+
+    <!-- DRAWER -->
+
+    <div
+        id="drawerCarrinho"
+        class="drawer hidden"
+    >
+
+        <div class="drawer-content">
+
+            <!-- HEADER -->
+
+            <div class="drawer-header">
+
+                <h2>
+                    Lista de Solicitação
+                </h2>
+
+                <button
+                    id="fecharDrawer"
+                    class="fechar-drawer"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+            <!-- LISTA -->
+
+            <div id="listaCarrinho"></div>
+
+            <!-- FORMULÁRIO -->
+
+            <div class="formulario">
+
+                <h3>
+                    Informações da Solicitação
+                </h3>
+
+                <!-- GLPI -->
+
+                <div class="form-group">
+
+                    <label for="glpi">
+
+                        Número GLPI
+
+                    </label>
+
+                    <input
+                        type="number"
+                        id="glpi"
+                        placeholder="Ex: 2025018961"
+                    >
+
+                </div>
+
+                <!-- NOME -->
+
+                <div class="form-group">
+
+                    <label for="nomeRetirada">
+
+                        Nome de quem irá retirar
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nomeRetirada"
+                        placeholder="Ex: Mario Pereira"
+                    >
+
+                </div>
+
+                <!-- MATRÍCULA -->
+
+                <div class="form-group">
+
+                    <label for="matricula">
+
+                        Matrícula
+
+                    </label>
+
+                    <input
+                        type="number"
+                        id="matricula"
+                        placeholder="Ex: 5376"
+                    >
+
+                </div>
+
+                <!-- LOCAL -->
+
+                <div class="form-group">
+
+                    <label for="localUso">
+
+                        Local de utilização
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="localUso"
+                        placeholder="Ex: Santo Cristo"
+                    >
+
+                </div>
+
+                <!-- BOTÃO -->
+
+                <button
+                    id="btnEnviarWhatsapp"
+                    class="btn-enviar"
+                >
+
+                    <i class="fa-brands fa-whatsapp"></i>
+
+                    Enviar via WhatsApp
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
     <!-- FUSE -->
+
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
 
     <!-- APP -->
+
     <script src="assets/app.js"></script>
 
 </body>
