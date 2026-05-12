@@ -3,11 +3,14 @@
     --bg:
         #0b111e;
 
+    --bg-secondary:
+        #09101c;
+
     --card:
         rgba(20, 29, 48, 0.78);
 
     --card-border:
-        rgba(255,255,255,0.08);
+        rgba(255, 255, 255, 0.08);
 
     --text:
         #f5f7ff;
@@ -31,12 +34,56 @@
         #f59e0b;
 
     --shadow:
-        0 10px 40px rgba(0,0,0,0.35);
+        0 10px 40px rgba(0, 0, 0, 0.35);
 
     --radius:
         24px;
 
 }
+
+/* =========================
+   LIGHT MODE
+========================= */
+
+body.light-mode {
+
+    --bg:
+        #eef4ff;
+
+    --bg-secondary:
+        #dfe9ff;
+
+    --card:
+        rgba(255, 255, 255, 0.82);
+
+    --card-border:
+        rgba(15, 23, 42, 0.08);
+
+    --text:
+        #0f172a;
+
+    --muted:
+        #475569;
+
+    --primary:
+        #2563eb;
+
+    --primary-light:
+        #2563eb;
+
+    --shadow:
+        0 10px 35px rgba(15, 23, 42, 0.08);
+
+    background:
+        radial-gradient(circle at top,
+            var(--bg-secondary),
+            var(--bg) 55%);
+
+}
+
+/* =========================
+   RESET
+========================= */
 
 * {
 
@@ -48,16 +95,18 @@
 
 }
 
+/* =========================
+   BODY
+========================= */
+
 body {
 
     font-family: "Inter", sans-serif;
 
     background:
-        radial-gradient(
-            circle at top,
+        radial-gradient(circle at top,
             #14213d,
-            #0b111e 55%
-        );
+            #0b111e 55%);
 
     color: var(--text);
 
@@ -67,7 +116,79 @@ body {
 
     overflow-x: hidden;
 
+    transition:
+        background 0.3s ease,
+        color 0.3s ease;
+
 }
+
+/* =========================
+   TOGGLE TEMA
+========================= */
+
+.toggle-theme {
+
+    position: fixed;
+
+    top: 18px;
+
+    right: 18px;
+
+    width: 52px;
+
+    height: 52px;
+
+    border: none;
+
+    border-radius: 18px;
+
+    background:
+        rgba(255, 255, 255, 0.08);
+
+    color: white;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    z-index: 9999;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    backdrop-filter: blur(16px);
+
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.25);
+
+    transition:
+        all 0.25s ease;
+
+}
+
+.toggle-theme:hover {
+
+    transform:
+        translateY(-2px);
+
+}
+
+body.light-mode .toggle-theme {
+
+    background:
+        rgba(255, 255, 255, 0.9);
+
+    color:
+        #0f172a;
+
+}
+
+/* =========================
+   CONTAINER
+========================= */
 
 .container {
 
@@ -102,6 +223,10 @@ body {
 
 }
 
+/* =========================
+   HEADER
+========================= */
+
 header {
 
     text-align: center;
@@ -127,16 +252,14 @@ header {
     justify-content: center;
 
     background:
-        linear-gradient(
-            135deg,
+        linear-gradient(135deg,
             #2563eb,
-            #60a5fa
-        );
+            #60a5fa);
 
     font-size: 32px;
 
     box-shadow:
-        0 10px 35px rgba(37,99,235,0.45);
+        0 10px 35px rgba(37, 99, 235, 0.45);
 
 }
 
@@ -160,6 +283,10 @@ header p {
 
 }
 
+/* =========================
+   CARD
+========================= */
+
 .card {
 
     background: var(--card);
@@ -179,7 +306,8 @@ header p {
 
     transition:
         transform 0.25s ease,
-        border 0.25s ease;
+        border 0.25s ease,
+        background 0.25s ease;
 
 }
 
@@ -189,9 +317,13 @@ header p {
         translateY(-2px);
 
     border:
-        1px solid rgba(96,165,250,0.35);
+        1px solid rgba(96, 165, 250, 0.35);
 
 }
+
+/* =========================
+   FORM
+========================= */
 
 label {
 
@@ -217,9 +349,9 @@ input {
     outline: none;
 
     background:
-        rgba(255,255,255,0.05);
+        rgba(255, 255, 255, 0.05);
 
-    color: white;
+    color: var(--text);
 
     padding: 16px;
 
@@ -232,14 +364,22 @@ input {
 
 }
 
+body.light-mode select,
+body.light-mode input {
+
+    background:
+        rgba(15, 23, 42, 0.05);
+
+}
+
 select:focus,
 input:focus {
 
     background:
-        rgba(255,255,255,0.08);
+        rgba(255, 255, 255, 0.08);
 
     box-shadow:
-        0 0 0 3px rgba(59,130,246,0.35);
+        0 0 0 3px rgba(59, 130, 246, 0.35);
 
 }
 
@@ -270,6 +410,31 @@ input:focus {
 
 }
 
+/* =========================
+   FIX SELECT LIGHT MODE
+========================= */
+
+body.light-mode select {
+
+    color:
+        #0f172a;
+
+}
+
+body.light-mode option {
+
+    background:
+        #ffffff;
+
+    color:
+        #0f172a;
+
+}
+
+/* =========================
+   LOADING
+========================= */
+
 .loading {
 
     display: flex;
@@ -295,7 +460,7 @@ input:focus {
     border-radius: 50%;
 
     border:
-        3px solid rgba(255,255,255,0.1);
+        3px solid rgba(255, 255, 255, 0.1);
 
     border-top:
         3px solid var(--primary);
@@ -321,6 +486,10 @@ input:focus {
     display: none !important;
 
 }
+
+/* =========================
+   RESULTADOS
+========================= */
 
 .resultado-item {
 
@@ -377,7 +546,7 @@ input:focus {
         translateY(-3px);
 
     border:
-        1px solid rgba(96,165,250,0.3);
+        1px solid rgba(96, 165, 250, 0.3);
 
 }
 
@@ -434,6 +603,10 @@ input:focus {
 
 }
 
+/* =========================
+   EMPTY
+========================= */
+
 .empty-state {
 
     text-align: center;
@@ -452,6 +625,10 @@ input:focus {
 
 }
 
+/* =========================
+   MODAL
+========================= */
+
 .modal {
 
     position: fixed;
@@ -459,7 +636,7 @@ input:focus {
     inset: 0;
 
     background:
-        rgba(0,0,0,0.75);
+        rgba(0, 0, 0, 0.75);
 
     display: flex;
 
@@ -522,6 +699,13 @@ input:focus {
 
 }
 
+body.light-mode .modal-content {
+
+    background:
+        #ffffff;
+
+}
+
 @keyframes modalUp {
 
     from {
@@ -561,7 +745,7 @@ input:focus {
     border-radius: 50%;
 
     background:
-        rgba(255,255,255,0.1);
+        rgba(255, 255, 255, 0.1);
 
     color: white;
 
@@ -570,6 +754,16 @@ input:focus {
     font-size: 18px;
 
     z-index: 1001;
+
+}
+
+body.light-mode .fechar-modal {
+
+    background:
+        rgba(15, 23, 42, 0.08);
+
+    color:
+        #0f172a;
 
 }
 
@@ -622,6 +816,10 @@ input:focus {
 
 }
 
+/* =========================
+   BOTÃO ADICIONAR
+========================= */
+
 .btn-adicionar {
 
     width: calc(100% - 32px);
@@ -633,11 +831,9 @@ input:focus {
     border-radius: 20px;
 
     background:
-        linear-gradient(
-            135deg,
+        linear-gradient(135deg,
             #2563eb,
-            #60a5fa
-        );
+            #60a5fa);
 
     color: white;
 
@@ -662,7 +858,7 @@ input:focus {
 }
 
 /* =========================
-   CARRINHO MODERNO
+   CARRINHO
 ========================= */
 
 .fab-carrinho {
@@ -721,17 +917,6 @@ input:focus {
     transform:
         translateY(-2px);
 
-    box-shadow:
-        0 16px 36px rgba(37, 99, 235, 0.42),
-        0 6px 16px rgba(0, 0, 0, 0.3);
-
-}
-
-.fab-carrinho:active {
-
-    transform:
-        scale(0.97);
-
 }
 
 .fab-carrinho i {
@@ -745,8 +930,6 @@ input:focus {
     font-size: 15px;
 
     font-weight: 700;
-
-    white-space: nowrap;
 
 }
 
@@ -772,121 +955,11 @@ input:focus {
 
     font-weight: 900;
 
-    flex-shrink: 0;
-
 }
 
 /* =========================
-   MOBILE
+   DRAWER
 ========================= */
-
-@media (max-width: 640px) {
-
-    .fab-carrinho {
-
-        height: 52px;
-
-        min-width: 130px;
-
-        padding: 0 18px;
-
-        bottom: 14px;
-
-        right: 14px;
-
-    }
-
-    .fab-carrinho i {
-
-        font-size: 15px;
-
-    }
-
-    .texto-carrinho {
-
-        font-size: 14px;
-
-    }
-
-    .contador-carrinho {
-
-        width: 22px;
-
-        height: 22px;
-
-        font-size: 10px;
-
-    }
-
-}
-
-/* =========================
-   TOAST
-========================= */
-
-.toast {
-
-    position: fixed;
-
-    left: 50%;
-
-    bottom: 110px;
-
-    transform:
-        translateX(-50%)
-        translateY(20px);
-
-    background:
-        rgba(17,24,39,0.95);
-
-    color: white;
-
-    padding: 16px 22px;
-
-    border-radius: 18px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-    z-index: 9999;
-
-    opacity: 0;
-
-    transition:
-        all 0.3s ease;
-
-    box-shadow:
-        0 10px 30px rgba(0,0,0,0.35);
-
-    border:
-        1px solid rgba(255,255,255,0.08);
-
-}
-
-.toast i {
-
-    color: #22c55e;
-
-    font-size: 18px;
-
-}
-
-.toast-show {
-
-    opacity: 1;
-
-    transform:
-        translateX(-50%)
-        translateY(0);
-
-}
 
 .drawer {
 
@@ -895,7 +968,7 @@ input:focus {
     inset: 0;
 
     background:
-        rgba(0,0,0,0.72);
+        rgba(0, 0, 0, 0.72);
 
     z-index: 999;
 
@@ -922,6 +995,13 @@ input:focus {
 
     animation:
         drawerOpen 0.28s ease;
+
+}
+
+body.light-mode .drawer-content {
+
+    background:
+        #ffffff;
 
 }
 
@@ -972,7 +1052,7 @@ input:focus {
     border: none;
 
     background:
-        rgba(255,255,255,0.08);
+        rgba(255, 255, 255, 0.08);
 
     color: white;
 
@@ -980,16 +1060,37 @@ input:focus {
 
 }
 
+body.light-mode .fechar-drawer {
+
+    background:
+        rgba(15, 23, 42, 0.08);
+
+    color:
+        #0f172a;
+
+}
+
+/* =========================
+   ITEM CARRINHO
+========================= */
+
 .item-carrinho {
 
     background:
-        rgba(255,255,255,0.04);
+        rgba(255, 255, 255, 0.04);
 
     border-radius: 22px;
 
     padding: 18px;
 
     margin-bottom: 14px;
+
+}
+
+body.light-mode .item-carrinho {
+
+    background:
+        rgba(15, 23, 42, 0.04);
 
 }
 
@@ -1025,6 +1126,10 @@ input:focus {
 
 }
 
+/* =========================
+   CONTROLES
+========================= */
+
 .controle-quantidade {
 
     display: flex;
@@ -1046,15 +1151,22 @@ input:focus {
     border: none;
 
     background:
-        rgba(255,255,255,0.08);
+        rgba(255, 255, 255, 0.08);
 
-    color: white;
+    color: var(--text);
 
     cursor: pointer;
 
     font-size: 18px;
 
     font-weight: 700;
+
+}
+
+body.light-mode .btn-qtd {
+
+    background:
+        rgba(15, 23, 42, 0.08);
 
 }
 
@@ -1069,7 +1181,7 @@ input:focus {
     border: none;
 
     background:
-        rgba(239,68,68,0.15);
+        rgba(239, 68, 68, 0.15);
 
     color: var(--danger);
 
@@ -1077,25 +1189,9 @@ input:focus {
 
 }
 
-.form-section {
-
-    margin-top: 28px;
-
-}
-
-.form-section h3 {
-
-    margin-bottom: 16px;
-
-    font-size: 18px;
-
-}
-
-.form-section input {
-
-    margin-bottom: 14px;
-
-}
+/* =========================
+   WHATSAPP
+========================= */
 
 .btn-whatsapp {
 
@@ -1134,84 +1230,44 @@ input:focus {
 
     overflow: hidden;
 
-    backdrop-filter: blur(14px);
-
     box-shadow:
-        0 12px 30px rgba(34, 197, 94, 0.32),
-        0 4px 12px rgba(0, 0, 0, 0.28);
+        0 12px 30px rgba(34, 197, 94, 0.32);
 
     transition:
-        transform 0.22s ease,
-        box-shadow 0.22s ease,
-        filter 0.22s ease;
+        all 0.22s ease;
 
 }
-
-/* brilho interno */
-
-.btn-whatsapp::before {
-
-    content: "";
-
-    position: absolute;
-
-    inset: 0;
-
-    background:
-        linear-gradient(120deg,
-            rgba(255, 255, 255, 0.18),
-            transparent 40%);
-
-    pointer-events: none;
-
-}
-
-/* hover desktop */
 
 .btn-whatsapp:hover {
 
     transform:
         translateY(-2px);
 
-    box-shadow:
-        0 18px 40px rgba(34, 197, 94, 0.42),
-        0 8px 18px rgba(0, 0, 0, 0.35);
-
-    filter: brightness(1.04);
-
 }
 
-/* clique */
-
-.btn-whatsapp:active {
-
-    transform:
-        scale(0.97);
-
-}
-
-/* loading opcional futuro */
-
-.btn-whatsapp.loading {
-
-    opacity: 0.8;
-
-    pointer-events: none;
-
-}
-
-.btn-whatsapp:active {
-
-    transform:
-        scale(0.98);
-
-}
+/* =========================
+   MOBILE
+========================= */
 
 @media (max-width: 640px) {
 
     body {
 
         padding: 14px;
+
+    }
+
+    .toggle-theme {
+
+        width: 46px;
+
+        height: 46px;
+
+        border-radius: 16px;
+
+        top: 14px;
+
+        right: 14px;
 
     }
 
@@ -1245,173 +1301,38 @@ input:focus {
 
     .fab-carrinho {
 
-        position: fixed;
+        height: 52px;
 
-        right: 18px;
-
-        bottom: 18px;
-
-        height: 56px;
+        min-width: 130px;
 
         padding: 0 18px;
 
-        border: none;
+        bottom: 14px;
 
-        border-radius: 18px;
-
-        background:
-            linear-gradient(135deg,
-                rgba(37, 99, 235, 0.96),
-                rgba(29, 78, 216, 0.96));
-
-        color: white;
-
-        cursor: pointer;
-
-        z-index: 998;
-
-        display: flex;
-
-        align-items: center;
-
-        justify-content: center;
-
-        gap: 10px;
-
-        backdrop-filter: blur(16px);
-
-        box-shadow:
-            0 10px 24px rgba(37, 99, 235, 0.32),
-            0 4px 10px rgba(0, 0, 0, 0.24);
-
-        transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease,
-            filter 0.2s ease;
+        right: 14px;
 
     }
-
-    /* brilho suave */
-
-    .fab-carrinho::before {
-
-        content: "";
-
-        position: absolute;
-
-        inset: 0;
-
-        border-radius: inherit;
-
-        background:
-            linear-gradient(120deg,
-                rgba(255, 255, 255, 0.12),
-                transparent 45%);
-
-        pointer-events: none;
-
-    }
-
-    .fab-carrinho:hover {
-
-        transform:
-            translateY(-2px);
-
-        box-shadow:
-            0 14px 30px rgba(37, 99, 235, 0.4),
-            0 6px 14px rgba(0, 0, 0, 0.3);
-
-    }
-
-    .fab-carrinho:active {
-
-        transform:
-            scale(0.96);
-
-    }
-
-    /* ícone */
 
     .fab-carrinho i {
 
-        font-size: 16px;
+        font-size: 15px;
 
     }
-
-    /* texto */
 
     .texto-carrinho {
 
         font-size: 14px;
 
-        font-weight: 700;
-
-        letter-spacing: 0.2px;
-
     }
-
-    /* contador */
 
     .contador-carrinho {
 
-        min-width: 22px;
+        width: 22px;
 
         height: 22px;
 
-        padding: 0 6px;
-
-        border-radius: 999px;
-
-        background: white;
-
-        color: #2563eb;
-
-        display: flex;
-
-        align-items: center;
-
-        justify-content: center;
-
-        font-size: 11px;
-
-        font-weight: 900;
-
-        box-shadow:
-            0 3px 8px rgba(0, 0, 0, 0.2);
+        font-size: 10px;
 
     }
 
-    /* =========================
-    MOBILE
-    ========================= */
-
-    @media (max-width: 640px) {
-
-        .fab-carrinho {
-
-            height: 52px;
-
-            padding: 0 16px;
-
-            border-radius: 16px;
-
-            bottom: 14px;
-
-            right: 14px;
-
-        }
-
-        .fab-carrinho i {
-
-            font-size: 15px;
-
-        }
-
-        .texto-carrinho {
-
-            font-size: 13px;
-
-        }
-
-    }
 }

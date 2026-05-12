@@ -6,47 +6,41 @@
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>
         Almoxarifado Inteligente
     </title>
 
     <!-- GOOGLE FONTS -->
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
 
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- ICONS -->
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    >
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
     <!-- CSS -->
-    <link
-        rel="stylesheet"
-        href="assets/style.css"
-    >
+
+    <link rel="stylesheet" href="assets/style.css">
 
 </head>
 
 <body>
+
+    <!-- =========================
+         TOGGLE TEMA
+    ========================== -->
+
+    <button id="toggleTema" class="toggle-theme" aria-label="Alternar tema">
+
+        <i class="fa-solid fa-moon"></i>
+
+    </button>
 
     <div class="container">
 
@@ -113,12 +107,7 @@
 
                 <i class="fa-solid fa-magnifying-glass"></i>
 
-                <input
-                    type="text"
-                    id="busca"
-                    placeholder="Digite código ou descrição..."
-                    autocomplete="off"
-                >
+                <input type="text" id="busca" placeholder="Digite código ou descrição..." autocomplete="off">
 
             </div>
 
@@ -126,10 +115,7 @@
 
         <!-- LOADING -->
 
-        <div
-            id="loading"
-            class="loading hidden"
-        >
+        <div id="loading" class="loading hidden">
 
             <div class="spinner"></div>
 
@@ -147,17 +133,11 @@
 
     <!-- MODAL -->
 
-    <div
-        id="modal"
-        class="modal hidden"
-    >
+    <div id="modal" class="modal hidden">
 
         <div class="modal-content">
 
-            <button
-                id="fecharModal"
-                class="fechar-modal"
-            >
+            <button id="fecharModal" class="fechar-modal">
 
                 <i class="fa-solid fa-xmark"></i>
 
@@ -167,11 +147,7 @@
 
             <div class="modal-imagem">
 
-                <img
-                    id="modalImagem"
-                    src="assets/imagens/placeholder.png"
-                    alt="Material"
-                >
+                <img id="modalImagem" src="assets/imagens/placeholder.png" alt="Material">
 
             </div>
 
@@ -179,29 +155,17 @@
 
             <div class="modal-info">
 
-                <div
-                    id="modalCodigo"
-                    class="modal-codigo"
-                ></div>
+                <div id="modalCodigo" class="modal-codigo"></div>
 
-                <div
-                    id="modalDescricao"
-                    class="modal-descricao"
-                ></div>
+                <div id="modalDescricao" class="modal-descricao"></div>
 
-                <div
-                    id="modalStatus"
-                    class="modal-status"
-                ></div>
+                <div id="modalStatus" class="modal-status"></div>
 
             </div>
 
             <!-- BOTÃO -->
 
-            <button
-                id="btnAdicionarLista"
-                class="btn-adicionar"
-            >
+            <button id="btnAdicionarLista" class="btn-adicionar">
 
                 <i class="fa-solid fa-cart-plus"></i>
 
@@ -216,25 +180,22 @@
     <!-- BOTÃO CARRINHO -->
 
     <button id="btnCarrinho" class="fab-carrinho hidden">
-    
+
         <i class="fa-solid fa-cart-shopping"></i>
-    
+
         <span class="texto-carrinho">
             Lista
         </span>
-    
+
         <span id="contadorCarrinho" class="contador-carrinho">
             0
         </span>
-    
+
     </button>
 
     <!-- DRAWER -->
 
-    <div
-        id="drawerCarrinho"
-        class="drawer hidden"
-    >
+    <div id="drawerCarrinho" class="drawer hidden">
 
         <div class="drawer-content">
 
@@ -246,10 +207,7 @@
                     Lista de Solicitação
                 </h2>
 
-                <button
-                    id="fecharDrawer"
-                    class="fechar-drawer"
-                >
+                <button id="fecharDrawer" class="fechar-drawer">
 
                     <i class="fa-solid fa-xmark"></i>
 
@@ -279,11 +237,7 @@
 
                     </label>
 
-                    <input
-                        type="number"
-                        id="glpi"
-                        placeholder="Ex: 2025018961"
-                    >
+                    <input type="number" id="glpi" placeholder="Ex: 2025018961">
 
                 </div>
 
@@ -297,11 +251,7 @@
 
                     </label>
 
-                    <input
-                        type="text"
-                        id="nomeRetirada"
-                        placeholder="Ex: Mario Pereira"
-                    >
+                    <input type="text" id="nomeRetirada" placeholder="Ex: Mario Pereira">
 
                 </div>
 
@@ -315,11 +265,7 @@
 
                     </label>
 
-                    <input
-                        type="number"
-                        id="matricula"
-                        placeholder="Ex: 5376"
-                    >
+                    <input type="number" id="matricula" placeholder="Ex: 5376">
 
                 </div>
 
@@ -333,11 +279,7 @@
 
                     </label>
 
-                    <input
-                        type="text"
-                        id="localUso"
-                        placeholder="Ex: Santo Cristo"
-                    >
+                    <input type="text" id="localUso" placeholder="Ex: Santo Cristo">
 
                 </div>
 
@@ -362,6 +304,115 @@
     <!-- FUSE -->
 
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+
+    <!-- =========================
+         TEMA AUTOMÁTICO
+    ========================== -->
+
+    <script>
+
+        const body =
+            document.body
+
+        const toggleTema =
+            document.getElementById(
+                "toggleTema"
+            )
+
+        const iconeTema =
+            toggleTema.querySelector("i")
+
+        function aplicarTema(tema) {
+
+            if (tema === "light") {
+
+                body.classList.add(
+                    "light-mode"
+                )
+
+                iconeTema.className =
+                    "fa-solid fa-sun"
+
+            }
+
+            else {
+
+                body.classList.remove(
+                    "light-mode"
+                )
+
+                iconeTema.className =
+                    "fa-solid fa-moon"
+
+            }
+
+        }
+
+        // =========================
+        // TEMA SALVO
+        // =========================
+
+        const temaSalvo =
+            localStorage.getItem(
+                "tema"
+            )
+
+        // =========================
+        // TEMA SISTEMA
+        // =========================
+
+        const prefereClaro =
+            window.matchMedia(
+                "(prefers-color-scheme: light)"
+            ).matches
+
+        if (temaSalvo) {
+
+            aplicarTema(temaSalvo)
+
+        }
+
+        else {
+
+            aplicarTema(
+                prefereClaro
+                    ? "light"
+                    : "dark"
+            )
+
+        }
+
+        // =========================
+        // TROCAR TEMA
+        // =========================
+
+        toggleTema.addEventListener(
+            "click",
+            () => {
+
+                const temaAtual =
+                    body.classList.contains(
+                        "light-mode"
+                    )
+                        ? "light"
+                        : "dark"
+
+                const novoTema =
+                    temaAtual === "dark"
+                        ? "light"
+                        : "dark"
+
+                aplicarTema(novoTema)
+
+                localStorage.setItem(
+                    "tema",
+                    novoTema
+                )
+
+            }
+        )
+
+    </script>
 
     <!-- APP -->
 

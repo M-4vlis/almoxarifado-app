@@ -2,6 +2,149 @@ let materiais = []
 let fuse
 
 // =========================
+// TEMA (LIGHT / DARK)
+// =========================
+
+const btnTema =
+    document.getElementById("btnTema")
+
+function aplicarTema(tema) {
+
+    document.body.classList.remove(
+        "light-mode",
+        "dark-mode"
+    )
+
+    document.body.classList.add(
+        `${tema}-mode`
+    )
+
+    atualizarIconeTema(tema)
+
+}
+
+function atualizarIconeTema(tema) {
+
+    if (!btnTema) return
+
+    btnTema.innerHTML =
+        tema === "dark"
+            ? `<i class="fa-solid fa-sun"></i>`
+            : `<i class="fa-solid fa-moon"></i>`
+
+}
+
+function iniciarTema() {
+
+    const temaSalvo =
+        localStorage.getItem(
+            "temaSistema"
+        )
+
+    // =========================
+    // TEMA SALVO
+    // =========================
+
+    if (temaSalvo) {
+
+        aplicarTema(temaSalvo)
+
+        return
+
+    }
+
+    // =========================
+    // DETECTA SISTEMA
+    // =========================
+
+    const prefereDark =
+        window.matchMedia(
+            "(prefers-color-scheme: dark)"
+        ).matches
+
+    aplicarTema(
+        prefereDark
+            ? "dark"
+            : "light"
+    )
+
+}
+
+// =========================
+// BOTÃO TEMA
+// =========================
+
+if (btnTema) {
+
+    btnTema.addEventListener(
+        "click",
+        () => {
+
+            const temaAtual =
+                document.body.classList.contains(
+                    "dark-mode"
+                )
+                    ? "dark"
+                    : "light"
+
+            const novoTema =
+                temaAtual === "dark"
+                    ? "light"
+                    : "dark"
+
+            localStorage.setItem(
+                "temaSistema",
+                novoTema
+            )
+
+            aplicarTema(novoTema)
+
+        }
+    )
+
+}
+
+// =========================
+// ALTERAÇÃO AUTOMÁTICA
+// =========================
+
+const mediaTheme =
+    window.matchMedia(
+        "(prefers-color-scheme: dark)"
+    )
+
+mediaTheme.addEventListener(
+    "change",
+    (evento) => {
+
+        const temaSalvo =
+            localStorage.getItem(
+                "temaSistema"
+            )
+
+        // Só altera automaticamente
+        // se usuário nunca escolheu manualmente
+
+        if (!temaSalvo) {
+
+            aplicarTema(
+                evento.matches
+                    ? "dark"
+                    : "light"
+            )
+
+        }
+
+    }
+)
+
+// =========================
+// INICIA TEMA
+// =========================
+
+iniciarTema()
+
+// =========================
 // LISTA DE SOLICITAÇÃO
 // =========================
 
@@ -108,13 +251,17 @@ function mostrarToast(texto) {
 
     setTimeout(() => {
 
-        toast.classList.add("toast-show")
+        toast.classList.add(
+            "toast-show"
+        )
 
     }, 50)
 
     setTimeout(() => {
 
-        toast.classList.remove("toast-show")
+        toast.classList.remove(
+            "toast-show"
+        )
 
         setTimeout(() => {
 
@@ -185,10 +332,14 @@ async function carregarMateriais() {
 
     try {
 
-        divLoading.classList.remove("hidden")
+        divLoading.classList.remove(
+            "hidden"
+        )
 
         const resposta =
-            await fetch("data/materiais.json")
+            await fetch(
+                "data/materiais.json"
+            )
 
         materiais =
             await resposta.json()
@@ -224,7 +375,9 @@ async function carregarMateriais() {
 
         })
 
-        divLoading.classList.add("hidden")
+        divLoading.classList.add(
+            "hidden"
+        )
 
     }
 
@@ -256,7 +409,10 @@ function carregarImagemMaterial(codigo) {
 
     function tentarProximaImagem() {
 
-        if (indiceAtual >= caminhos.length) {
+        if (
+            indiceAtual >=
+            caminhos.length
+        ) {
 
             modalImagem.src =
                 "assets/imagens/placeholder.png"
@@ -338,7 +494,9 @@ function abrirModal(material) {
         material.codigo
     )
 
-    modal.classList.remove("hidden")
+    modal.classList.remove(
+        "hidden"
+    )
 
 }
 
@@ -350,7 +508,9 @@ fecharModal.addEventListener(
     "click",
     () => {
 
-        modal.classList.add("hidden")
+        modal.classList.add(
+            "hidden"
+        )
 
     }
 )
@@ -359,9 +519,13 @@ modal.addEventListener(
     "click",
     (evento) => {
 
-        if (evento.target === modal) {
+        if (
+            evento.target === modal
+        ) {
 
-            modal.classList.add("hidden")
+            modal.classList.add(
+                "hidden"
+            )
 
         }
 
@@ -432,17 +596,15 @@ btnAdicionarLista.addEventListener(
             "Material adicionado à lista"
         )
 
-        // =========================
-        // LIMPA BUSCA
-        // =========================
-
         campoBusca.value = ""
 
         divResultados.innerHTML = ""
 
         setTimeout(() => {
 
-            modal.classList.add("hidden")
+            modal.classList.add(
+                "hidden"
+            )
 
         }, 450)
 
@@ -459,7 +621,10 @@ function atualizarCarrinho() {
         listaSolicitacao.reduce(
             (total, item) => {
 
-                return total + item.quantidade
+                return (
+                    total +
+                    item.quantidade
+                )
 
             },
             0
@@ -468,15 +633,21 @@ function atualizarCarrinho() {
     contadorCarrinho.innerText =
         totalItens
 
-    if (listaSolicitacao.length > 0) {
+    if (
+        listaSolicitacao.length > 0
+    ) {
 
-        btnCarrinho.classList.remove("hidden")
+        btnCarrinho.classList.remove(
+            "hidden"
+        )
 
     }
 
     else {
 
-        btnCarrinho.classList.add("hidden")
+        btnCarrinho.classList.add(
+            "hidden"
+        )
 
     }
 
@@ -492,7 +663,9 @@ function renderizarCarrinho() {
 
     listaCarrinho.innerHTML = ""
 
-    if (listaSolicitacao.length === 0) {
+    if (
+        listaSolicitacao.length === 0
+    ) {
 
         listaCarrinho.innerHTML = `
 
@@ -546,6 +719,7 @@ function renderizarCarrinho() {
                     >
 
                         -
+
                     </button>
 
                     <span>
@@ -558,6 +732,7 @@ function renderizarCarrinho() {
                     >
 
                         +
+
                     </button>
 
                 </div>
@@ -590,7 +765,9 @@ function aumentarQuantidade(codigo) {
     const item =
         listaSolicitacao.find(item => {
 
-            return item.codigo === codigo
+            return (
+                item.codigo === codigo
+            )
 
         })
 
@@ -615,7 +792,9 @@ function diminuirQuantidade(codigo) {
     const item =
         listaSolicitacao.find(item => {
 
-            return item.codigo === codigo
+            return (
+                item.codigo === codigo
+            )
 
         })
 
@@ -623,7 +802,9 @@ function diminuirQuantidade(codigo) {
 
     item.quantidade -= 1
 
-    if (item.quantidade <= 0) {
+    if (
+        item.quantidade <= 0
+    ) {
 
         removerItem(codigo)
 
@@ -646,7 +827,9 @@ function removerItem(codigo) {
     listaSolicitacao =
         listaSolicitacao.filter(item => {
 
-            return item.codigo !== codigo
+            return (
+                item.codigo !== codigo
+            )
 
         })
 
@@ -687,7 +870,8 @@ drawerCarrinho.addEventListener(
     (evento) => {
 
         if (
-            evento.target === drawerCarrinho
+            evento.target ===
+            drawerCarrinho
         ) {
 
             drawerCarrinho.classList.add(
@@ -757,7 +941,9 @@ function gerarMensagemWhatsapp() {
 
     }
 
-    if (listaSolicitacao.length === 0) {
+    if (
+        listaSolicitacao.length === 0
+    ) {
 
         alert(
             "Adicione materiais à lista."
@@ -826,7 +1012,9 @@ btnEnviarWhatsapp.addEventListener(
         }
 
         const texto =
-            encodeURIComponent(mensagem)
+            encodeURIComponent(
+                mensagem
+            )
 
         const url =
             `https://wa.me/?text=${texto}`
@@ -835,10 +1023,6 @@ btnEnviarWhatsapp.addEventListener(
             url,
             "_blank"
         )
-
-        // =========================
-        // LIMPA DADOS APÓS ENVIO
-        // =========================
 
         listaSolicitacao = []
 
@@ -914,7 +1098,8 @@ function buscarMateriais() {
 
         resultados =
             resultados.map(
-                resultado => resultado.item
+                resultado =>
+                    resultado.item
             )
 
     }
@@ -925,7 +1110,7 @@ function buscarMateriais() {
             return (
 
                 material.almoxarifado ===
-                    almoxarifadoSelecionado &&
+                almoxarifadoSelecionado &&
 
                 material.disponivel
 
@@ -933,7 +1118,9 @@ function buscarMateriais() {
 
         })
 
-    if (existeDisponivelNoSelecionado) {
+    if (
+        existeDisponivelNoSelecionado
+    ) {
 
         resultados =
             resultados.filter(material => {
@@ -955,10 +1142,16 @@ function buscarMateriais() {
         const prioridadeB =
             b.disponivel
 
-        if (prioridadeA && !prioridadeB)
+        if (
+            prioridadeA &&
+            !prioridadeB
+        )
             return -1
 
-        if (!prioridadeA && prioridadeB)
+        if (
+            !prioridadeA &&
+            prioridadeB
+        )
             return 1
 
         return 0
@@ -973,10 +1166,13 @@ function buscarMateriais() {
     resultados.forEach(material => {
 
         if (
+
             !material.disponivel &&
+
             codigosJaAdicionados.has(
                 material.codigo
             )
+
         ) {
 
             return
@@ -992,14 +1188,19 @@ function buscarMateriais() {
     })
 
     if (
+
         buscaNumerica &&
+
         materiaisUnicos.length > 0
+
     ) {
 
         const encontrouDisponivel =
             materiaisUnicos.some(material => {
 
-                return material.disponivel
+                return (
+                    material.disponivel
+                )
 
             })
 
@@ -1011,7 +1212,9 @@ function buscarMateriais() {
 
     }
 
-    if (materiaisUnicos.length === 0) {
+    if (
+        materiaisUnicos.length === 0
+    ) {
 
         divResultados.innerHTML = `
 
@@ -1053,7 +1256,7 @@ function buscarMateriais() {
         if (
 
             material.almoxarifado ===
-                almoxarifadoSelecionado &&
+            almoxarifadoSelecionado &&
 
             material.disponivel
 
@@ -1064,7 +1267,9 @@ function buscarMateriais() {
 
         }
 
-        else if (material.disponivel) {
+        else if (
+            material.disponivel
+        ) {
 
             statusTexto =
                 `⚠️ Disponível no ${material.almoxarifado}`
