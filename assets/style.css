@@ -673,24 +673,22 @@ input:focus {
 
     bottom: 20px;
 
-    width: 68px;
+    height: 58px;
 
-    height: 68px;
+    min-width: 150px;
 
-    border-radius: 22px;
+    padding: 0 22px;
 
     border: none;
 
+    border-radius: 999px;
+
     background:
-        linear-gradient(
-            135deg,
+        linear-gradient(135deg,
             #2563eb,
-            #1d4ed8
-        );
+            #1d4ed8);
 
     color: white;
-
-    font-size: 24px;
 
     cursor: pointer;
 
@@ -702,51 +700,63 @@ input:focus {
 
     justify-content: center;
 
+    gap: 10px;
+
+    overflow: hidden;
+
     backdrop-filter: blur(16px);
 
     box-shadow:
-        0 12px 30px rgba(37,99,235,0.38),
-        0 4px 12px rgba(0,0,0,0.28);
+        0 12px 28px rgba(37, 99, 235, 0.32),
+        0 4px 10px rgba(0, 0, 0, 0.25);
 
     transition:
-        transform 0.22s ease,
-        box-shadow 0.22s ease;
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 
 }
 
 .fab-carrinho:hover {
 
     transform:
-        translateY(-3px);
+        translateY(-2px);
 
     box-shadow:
-        0 18px 40px rgba(37,99,235,0.48),
-        0 6px 16px rgba(0,0,0,0.35);
+        0 16px 36px rgba(37, 99, 235, 0.42),
+        0 6px 16px rgba(0, 0, 0, 0.3);
 
 }
 
 .fab-carrinho:active {
 
     transform:
-        scale(0.95);
+        scale(0.97);
+
+}
+
+.fab-carrinho i {
+
+    font-size: 17px;
+
+}
+
+.texto-carrinho {
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
 
 }
 
 .contador-carrinho {
 
-    position: absolute;
+    width: 24px;
 
-    top: -6px;
+    height: 24px;
 
-    right: -6px;
-
-    min-width: 26px;
-
-    height: 26px;
-
-    padding: 0 6px;
-
-    border-radius: 999px;
+    border-radius: 50%;
 
     background: white;
 
@@ -758,39 +768,53 @@ input:focus {
 
     justify-content: center;
 
-    font-size: 12px;
+    font-size: 11px;
 
-    font-weight: 800;
+    font-weight: 900;
 
-    box-shadow:
-        0 4px 10px rgba(0,0,0,0.2);
-
-}
-
-.pulse-carrinho {
-
-    animation:
-        pulseCarrinho 0.45s ease;
+    flex-shrink: 0;
 
 }
 
-@keyframes pulseCarrinho {
+/* =========================
+   MOBILE
+========================= */
 
-    0% {
+@media (max-width: 640px) {
 
-        transform: scale(1);
+    .fab-carrinho {
+
+        height: 52px;
+
+        min-width: 130px;
+
+        padding: 0 18px;
+
+        bottom: 14px;
+
+        right: 14px;
 
     }
 
-    50% {
+    .fab-carrinho i {
 
-        transform: scale(1.12);
+        font-size: 15px;
 
     }
 
-    100% {
+    .texto-carrinho {
 
-        transform: scale(1);
+        font-size: 14px;
+
+    }
+
+    .contador-carrinho {
+
+        width: 22px;
+
+        height: 22px;
+
+        font-size: 10px;
 
     }
 
@@ -1223,17 +1247,17 @@ input:focus {
 
         position: fixed;
 
-        right: 20px;
+        right: 18px;
 
-        bottom: 20px;
+        bottom: 18px;
 
-        height: 68px;
+        height: 56px;
 
-        padding: 0 22px;
+        padding: 0 18px;
 
         border: none;
 
-        border-radius: 24px;
+        border-radius: 18px;
 
         background:
             linear-gradient(135deg,
@@ -1252,24 +1276,22 @@ input:focus {
 
         justify-content: center;
 
-        gap: 14px;
+        gap: 10px;
 
         backdrop-filter: blur(16px);
 
         box-shadow:
-            0 14px 35px rgba(37, 99, 235, 0.38),
-            0 6px 14px rgba(0, 0, 0, 0.28);
+            0 10px 24px rgba(37, 99, 235, 0.32),
+            0 4px 10px rgba(0, 0, 0, 0.24);
 
         transition:
-            transform 0.22s ease,
-            box-shadow 0.22s ease,
-            filter 0.22s ease;
-
-        overflow: hidden;
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            filter 0.2s ease;
 
     }
 
-    /* brilho interno */
+    /* brilho suave */
 
     .fab-carrinho::before {
 
@@ -1279,9 +1301,11 @@ input:focus {
 
         inset: 0;
 
+        border-radius: inherit;
+
         background:
             linear-gradient(120deg,
-                rgba(255, 255, 255, 0.18),
+                rgba(255, 255, 255, 0.12),
                 transparent 45%);
 
         pointer-events: none;
@@ -1291,13 +1315,11 @@ input:focus {
     .fab-carrinho:hover {
 
         transform:
-            translateY(-3px);
+            translateY(-2px);
 
         box-shadow:
-            0 20px 45px rgba(37, 99, 235, 0.48),
-            0 10px 20px rgba(0, 0, 0, 0.34);
-
-        filter: brightness(1.04);
+            0 14px 30px rgba(37, 99, 235, 0.4),
+            0 6px 14px rgba(0, 0, 0, 0.3);
 
     }
 
@@ -1308,17 +1330,21 @@ input:focus {
 
     }
 
+    /* ícone */
+
     .fab-carrinho i {
 
-        font-size: 22px;
+        font-size: 16px;
 
     }
 
+    /* texto */
+
     .texto-carrinho {
 
-        font-size: 15px;
+        font-size: 14px;
 
-        font-weight: 800;
+        font-weight: 700;
 
         letter-spacing: 0.2px;
 
@@ -1328,11 +1354,11 @@ input:focus {
 
     .contador-carrinho {
 
-        min-width: 26px;
+        min-width: 22px;
 
-        height: 26px;
+        height: 22px;
 
-        padding: 0 7px;
+        padding: 0 6px;
 
         border-radius: 999px;
 
@@ -1346,12 +1372,46 @@ input:focus {
 
         justify-content: center;
 
-        font-size: 12px;
+        font-size: 11px;
 
         font-weight: 900;
 
         box-shadow:
-            0 4px 10px rgba(0, 0, 0, 0.25);
+            0 3px 8px rgba(0, 0, 0, 0.2);
+
+    }
+
+    /* =========================
+    MOBILE
+    ========================= */
+
+    @media (max-width: 640px) {
+
+        .fab-carrinho {
+
+            height: 52px;
+
+            padding: 0 16px;
+
+            border-radius: 16px;
+
+            bottom: 14px;
+
+            right: 14px;
+
+        }
+
+        .fab-carrinho i {
+
+            font-size: 15px;
+
+        }
+
+        .texto-carrinho {
+
+            font-size: 13px;
+
+        }
 
     }
 }
