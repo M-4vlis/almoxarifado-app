@@ -1,0 +1,387 @@
+[
+    {
+        "nome": "ADAILSON NATAL DA CUNHA",
+        "matricula": "0004435",
+        "cpf": "03220170765"
+    },
+    {
+        "nome": "ADRIANO DE MOURA",
+        "matricula": "0004439",
+        "cpf": "03894172703"
+    },
+    {
+        "nome": "ALEX DA SILVA PEREIRA",
+        "matricula": "0006363",
+        "cpf": "10588963771"
+    },
+    {
+        "nome": "ALEXANDRE VANDERLEI DOS SANTOS FERREIRA",
+        "matricula": "0004453",
+        "cpf": "09132506783"
+    },
+    {
+        "nome": "ALISON DA SILVA DE MELO",
+        "matricula": "0008079",
+        "cpf": "12307944761"
+    },
+    {
+        "nome": "ANDERSON DELGADO QUINTANILHA",
+        "matricula": "0004458",
+        "cpf": "07595864704"
+    },
+    {
+        "nome": "ANDRE DOS SANTOS NASCIMENTO",
+        "matricula": "0004459",
+        "cpf": "03012373799"
+    },
+    {
+        "nome": "BONHEUR CESAR",
+        "matricula": "0006436",
+        "cpf": "70321114248"
+    },
+    {
+        "nome": "BRUNO GONCALVES LOBO",
+        "matricula": "0004468",
+        "cpf": "09618164730"
+    },
+    {
+        "nome": "CARLOS ALBERTO DA COSTA DE OLIVEIRA",
+        "matricula": "0004471",
+        "cpf": "04485225780"
+    },
+    {
+        "nome": "CRISTIANO DA SILVA RAMOS",
+        "matricula": "0004926",
+        "cpf": "08353362716"
+    },
+    {
+        "nome": "DANIEL GRIPP TRINDADE",
+        "matricula": "0004485",
+        "cpf": "09573772744"
+    },
+    {
+        "nome": "DANIELA DE BRITO OLIVEIRA RIMOLA",
+        "matricula": "0008052",
+        "cpf": "08032348727"
+    },
+    {
+        "nome": "DENIS NOGUEIRA DA SILVA",
+        "matricula": "0004488",
+        "cpf": "12366530765"
+    },
+    {
+        "nome": "DIEGO FERREIRA DE SOUSA",
+        "matricula": "0005828",
+        "cpf": "10839574738"
+    },
+    {
+        "nome": "EDSON LUIZ DA MATTA",
+        "matricula": "0004504",
+        "cpf": "57107483749"
+    },
+    {
+        "nome": "ELIAS SALES RIBEIRO",
+        "matricula": "0004512",
+        "cpf": "58044795715"
+    },
+    {
+        "nome": "ERINALDO DOS SANTOS",
+        "matricula": "0004810",
+        "cpf": "52189880491"
+    },
+    {
+        "nome": "FABIANO DE PAULA SILVA",
+        "matricula": "0004794",
+        "cpf": "08667912727"
+    },
+    {
+        "nome": "FABIO JUNIOR DA SILVA ARAUJO",
+        "matricula": "0004522",
+        "cpf": "09923113736"
+    },
+    {
+        "nome": "FABIO LUCIO DE ALMEIDA ANDRADE",
+        "matricula": "0004523",
+        "cpf": "06961946780"
+    },
+    {
+        "nome": "FELIPE ALVES LADEIRA",
+        "matricula": "0009728",
+        "cpf": "09925782724"
+    },
+    {
+        "nome": "FERNANDO MARIANO PINTO",
+        "matricula": "0004529",
+        "cpf": "01931728798"
+    },
+    {
+        "nome": "FERNANDO SALES DA SILVA",
+        "matricula": "0004791",
+        "cpf": "08569466722"
+    },
+    {
+        "nome": "FREDERICO TORRES DE RESENDE",
+        "matricula": "0009275",
+        "cpf": "09624622760"
+    },
+    {
+        "nome": "GILCEMAR DE FREITAS ARAUJO",
+        "matricula": "0006280",
+        "cpf": "10979625718"
+    },
+    {
+        "nome": "HUDSON EMANOEL CAMPOS",
+        "matricula": "0004788",
+        "cpf": "06649255530"
+    },
+    {
+        "nome": "IVAL CESAR DA SILVA",
+        "matricula": "0004856",
+        "cpf": "07567734745"
+    },
+    {
+        "nome": "IVAN MACHADO DE SOUZA",
+        "matricula": "0004555",
+        "cpf": "03285906731"
+    },
+    {
+        "nome": "EDVALDO GUIMARAES LIMA",
+        "matricula": "0002718",
+        "cpf": "16896331747"
+    },
+    {
+        "nome": "JEFERSON LOURENCO DE SOUZA",
+        "matricula": "0004787",
+        "cpf": "09503651735"
+    },
+    {
+        "nome": "JORGE LUIS DA SILVA OLIVEIRA",
+        "matricula": "0009176",
+        "cpf": "03774367710"
+    },
+    {
+        "nome": "JOSE EDUARDO SANTOS DA SILVA",
+        "matricula": "0004582",
+        "cpf": "07877227744"
+    },
+    {
+        "nome": "JOSE LUIZ OLIVEIRA BOMFIM SANTOS",
+        "matricula": "0004583",
+        "cpf": "09545951737"
+    },
+    {
+        "nome": "JOSE RENATO MEDINA NOGUEIRA",
+        "matricula": "0004584",
+        "cpf": "00600125793"
+    },
+    {
+        "nome": "LEONARDO CINTRA SACRAMENTO",
+        "matricula": "0004599",
+        "cpf": "04827676771"
+    },
+    {
+        "nome": "LEONARDO PINTO BARROS",
+        "matricula": "0010485",
+        "cpf": "10008975752"
+    },
+    {
+        "nome": "LEVI CARDOSO",
+        "matricula": "0004605",
+        "cpf": "01612065732"
+    },
+    {
+        "nome": "LIONARDO MONTEIRO RODRIGUES DA SILVA",
+        "matricula": "0004606",
+        "cpf": "02932973983"
+    },
+    {
+        "nome": "LUIZ ANTONIO PIMENTEL LOPES",
+        "matricula": "0004785",
+        "cpf": "66094410734"
+    },
+    {
+        "nome": "LUIZ PAULO VIEIRA BORGES",
+        "matricula": "0004632",
+        "cpf": "05332328729"
+    },
+    {
+        "nome": "MAICON PATROCINIO RIBEIRO",
+        "matricula": "0004633",
+        "cpf": "13336950716"
+    },
+    {
+        "nome": "MARIO DA SILVA PEREIRA",
+        "matricula": "0005376",
+        "cpf": "15672554776"
+    },
+    {
+        "nome": "MARCELO MAGNO BACALHAO",
+        "matricula": "0009676",
+        "cpf": "99034506720"
+    },
+    {
+        "nome": "MARCOS ANTONIO RODRIGUES MARQUES",
+        "matricula": "0004648",
+        "cpf": "03048199721"
+    },
+    {
+        "nome": "MARCOS PAULO GOMES DA SILVA",
+        "matricula": "0004650",
+        "cpf": "14496210746"
+    },
+    {
+        "nome": "JOSIAS COSME ALVES",
+        "matricula": "0004586",
+        "cpf": "61225355400"
+    },
+    {
+        "nome": "MAURICIO LUIZ DA SILVA JUNIOR",
+        "matricula": "0004824",
+        "cpf": "14123011730"
+    },
+    {
+        "nome": "MOISES GOMES VILANOVA",
+        "matricula": "0005833",
+        "cpf": "13985813728"
+    },
+    {
+        "nome": "MOISES VITA LEITE JUNIOR",
+        "matricula": "0004630",
+        "cpf": "08660035763"
+    },
+    {
+        "nome": "NEY MARIO PEREIRA",
+        "matricula": "0004877",
+        "cpf": "00045307725"
+    },
+    {
+        "nome": "PAULO ROBERTO VIEIRA DE SOUZA",
+        "matricula": "0004677",
+        "cpf": "76399036704"
+    },
+    {
+        "nome": "PEDRO HELIO MANSUR DE SOUZA",
+        "matricula": "0004679",
+        "cpf": "75514028704"
+    },
+    {
+        "nome": "PRISCILA DA SILVA ALEXANDRE MARTINS",
+        "matricula": "0009789",
+        "cpf": "15633159713"
+    },
+    {
+        "nome": "RAFAEL NOGUEIRA MOCO",
+        "matricula": "0004598",
+        "cpf": "11229674705"
+    },
+    {
+        "nome": "RAFAEL PEIXOTO DOS SANTOS",
+        "matricula": "0004689",
+        "cpf": "10535254784"
+    },
+    {
+        "nome": "RAMON SILVEIRA ALMEIDA",
+        "matricula": "0008034",
+        "cpf": "15064599781"
+    },
+    {
+        "nome": "RAPHAEL VARGAS DA SILVA",
+        "matricula": "0005378",
+        "cpf": "11264843771"
+    },
+    {
+        "nome": "RENAN DE JESUS OLIVEIRA",
+        "matricula": "0004696",
+        "cpf": "12568174730"
+    },
+    {
+        "nome": "RICARDO FRANCIS DE OLIVEIRA",
+        "matricula": "0006871",
+        "cpf": "76226514787"
+    },
+    {
+        "nome": "ROBERTO SANTOS DE DEUS",
+        "matricula": "0000129",
+        "cpf": "07101134718"
+    },
+    {
+        "nome": "ROBSON DA SILVA MARTINS",
+        "matricula": "0004708",
+        "cpf": "08547154795"
+    },
+    {
+        "nome": "ROMANY DA CONCEICAO THOMAZ",
+        "matricula": "0004588",
+        "cpf": "13120586765"
+    },
+    {
+        "nome": "RONALDO RODRIGUES DA SILVA",
+        "matricula": "0004719",
+        "cpf": "00853524700"
+    },
+    {
+        "nome": "RYCHARD RAFAEL ARAUJO DO NASCIMENTO",
+        "matricula": "0004803",
+        "cpf": "20067608744"
+    },
+    {
+        "nome": "SEBASTIAO DE OLIVEIRA MACEDO",
+        "matricula": "0004727",
+        "cpf": "11636578756"
+    },
+    {
+        "nome": "THIAGO DE SOUZA FLORINDO",
+        "matricula": "0004736",
+        "cpf": "14122647746"
+    },
+    {
+        "nome": "THIAGO DOS SANTOS FAUSTO",
+        "matricula": "0005840",
+        "cpf": "12084906725"
+    },
+    {
+        "nome": "THOMAS DA MATTA TINOCO",
+        "matricula": "0004739",
+        "cpf": "13293404774"
+    },
+    {
+        "nome": "VINICIUS BRAGA GOUVEIA",
+        "matricula": "0007997",
+        "cpf": "11083270796"
+    },
+    {
+        "nome": "WAGNER DORNELAS LEIRA",
+        "matricula": "0004753",
+        "cpf": "13900607729"
+    },
+    {
+        "nome": "WAGNER FERREIRA",
+        "matricula": "0004754",
+        "cpf": "07802875765"
+    },
+    {
+        "nome": "WAGNER MARTINS FERREIRA",
+        "matricula": "0004755",
+        "cpf": "07932719755"
+    },
+    {
+        "nome": "WALLACE REIS RAFAEL",
+        "matricula": "0004760",
+        "cpf": "07888603726"
+    },
+    {
+        "nome": "WANDERSON TAVARES DE SOUZA",
+        "matricula": "0004869",
+        "cpf": "08573260742"
+    },
+    {
+        "nome": "WANDHER DA COSTA DE SOUZA PAZ",
+        "matricula": "0004763",
+        "cpf": "13712544782"
+    },
+    {
+        "nome": "WEVERSON BERNARDO DA SILVA",
+        "matricula": "0004492",
+        "cpf": "11435121708"
+    }
+]

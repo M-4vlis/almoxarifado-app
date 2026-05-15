@@ -333,7 +333,7 @@
         "codigo": "200006858",
         "descricao": "ADESIVO ESTRUTURAL DE BASE EPÓXI MÉDIA FLUIDEZ - COMPOUND 1KG CINZA",
         "almoxarifado": "CENTRAL",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200005682",
@@ -2001,7 +2001,7 @@
         "codigo": "200000285",
         "descricao": "DOBRADIÇA DE 3X3",
         "almoxarifado": "CENTRAL",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200000286",
@@ -2433,13 +2433,13 @@
         "codigo": "200003401",
         "descricao": "FIXADOR DE PORTA PARA PISO, CROMADO",
         "almoxarifado": "CENTRAL",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200003402",
         "descricao": "FIXADOR DE PORTA PARA RODAPÉ, CROMADO",
         "almoxarifado": "CENTRAL",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200006159",
@@ -3633,7 +3633,7 @@
         "codigo": "200002118",
         "descricao": "MICTÓRIO COM SIFÃO INTEGRADO BRANCO GELO M712",
         "almoxarifado": "CENTRAL",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200006718",
@@ -3807,7 +3807,7 @@
         "codigo": "200005981",
         "descricao": "PARAFUSO AUTO ATARRAXANTE, PHILIPS CABEÇA CHATA, 4,8 X 50 MM (CX C/100 UNIDADES)",
         "almoxarifado": "CENTRAL",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200005773",
@@ -4731,7 +4731,7 @@
         "codigo": "200005825",
         "descricao": "REBITE DE REPUXO, 3,2 X 12MM EM ALUMINIO POLIDO ( EMBALAGEM COM 100 UNIDADES)",
         "almoxarifado": "CENTRAL",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200001078",
@@ -8607,7 +8607,7 @@
         "codigo": "200003643",
         "descricao": "LUVA DE CORRER PARA TUBO ROSCÁVEL 1",
         "almoxarifado": "SUB",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200003644",
@@ -8637,7 +8637,7 @@
         "codigo": "200002000",
         "descricao": "LUVA DE CORRER PARA TUBO ROSCÁVEL 3/4",
         "almoxarifado": "SUB",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200001986",
@@ -8745,7 +8745,7 @@
         "codigo": "200003649",
         "descricao": "LUVA ROSCÁVEL DE 2",
         "almoxarifado": "SUB",
-        "disponivel": true
+        "disponivel": false
     },
     {
         "codigo": "200001997",
@@ -9711,7 +9711,7 @@
         "codigo": "200001618",
         "descricao": "SELADORA PARA MADEIRA 3,6 LITROS",
         "almoxarifado": "SUB",
-        "disponivel": false
+        "disponivel": true
     },
     {
         "codigo": "200005788",
@@ -10666,6 +10666,12 @@
         "descricao": "PERNA DE MADEIRA PERNA DE 3, 6 CM X 6 CM",
         "almoxarifado": "BENFICA",
         "disponivel": false
+    },
+    {
+        "codigo": "200007032",
+        "descricao": "PISO VINÍLICO AUTOPORTANTE 4MM X 60,96CM X 60,96CM.",
+        "almoxarifado": "BENFICA",
+        "disponivel": true
     },
     {
         "codigo": "200004118",
