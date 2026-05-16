@@ -41,9 +41,6 @@ const campoLoginCpf =
 const loginErro =
     document.getElementById("loginErro")
 
-const usuarioLogadoNome =
-    document.getElementById("usuarioLogadoNome")
-
 const btnSair =
     document.getElementById("btnSair")
 
@@ -814,15 +811,7 @@ function configurarEventosTelas() {
 
         btnSairPerfil.addEventListener(
             "click",
-            () => {
-
-                if (btnSair) {
-
-                    btnSair.click()
-
-                }
-
-            }
+            sairDoSistema
         )
 
     }
@@ -871,13 +860,7 @@ function configurarEventosTelas() {
 
         btnGerarRelatorio.addEventListener(
             "click",
-            () => {
-
-                mostrarToast(
-                    "Relatório será implementado na próxima etapa"
-                )
-
-            }
+            gerarRelatorioSolicitacoes
         )
 
     }
@@ -973,6 +956,16 @@ function atualizarDashboardInicio() {
     const usuario =
         obterSessaoUsuario()
 
+    const boasVindas =
+        document.getElementById("homeBoasVindas")
+
+    if (boasVindas) {
+
+        boasVindas.innerText =
+            `Bem-vindo, ${usuario?.nome || "usuário"}`
+
+    }
+
     const saudacao =
         document.getElementById("homeSaudacao")
 
@@ -1057,8 +1050,6 @@ function atualizarDashboardInicio() {
         }
 
     })
-
-    renderizarSolicitacoesRecentes()
 
 }
 
@@ -1310,13 +1301,6 @@ async function mostrarAplicacao(usuario) {
 
     }
 
-    if (usuarioLogadoNome) {
-
-        usuarioLogadoNome.innerText =
-            usuario.nome || "Usuário"
-
-    }
-
     prepararEstruturaTelas()
 
     criarNavegacaoInferior()
@@ -1444,62 +1428,64 @@ if (formLogin) {
 // LOGOUT
 // =========================
 
+async function sairDoSistema() {
+
+    try {
+
+        await logoutFirebase()
+
+    }
+
+    catch (erro) {
+
+        console.error(
+            "Erro ao sair do Firebase:",
+            erro
+        )
+
+    }
+
+    limparSessaoUsuario()
+
+    solicitacoesCarregadas = []
+
+    if (campoBusca) {
+
+        campoBusca.value = ""
+
+    }
+
+    if (divResultados) {
+
+        divResultados.innerHTML = ""
+
+    }
+
+    if (drawerCarrinho) {
+
+        drawerCarrinho.classList.add("hidden")
+
+    }
+
+    if (modal) {
+
+        modal.classList.add("hidden")
+
+    }
+
+    mostrarTelaLogin()
+
+    mostrarToast(
+        "Você saiu do sistema"
+    )
+
+}
+
 if (btnSair) {
 
     btnSair.addEventListener(
         "click",
-        async () => {
-
-            try {
-
-                await logoutFirebase()
-
-            }
-
-            catch (erro) {
-
-                console.error(
-                    "Erro ao sair do Firebase:",
-                    erro
-                )
-
-            }
-
-            limparSessaoUsuario()
-
-            solicitacoesCarregadas = []
-
-            if (campoBusca) {
-
-                campoBusca.value = ""
-
-            }
-
-            if (divResultados) {
-
-                divResultados.innerHTML = ""
-
-            }
-
-            if (drawerCarrinho) {
-
-                drawerCarrinho.classList.add("hidden")
-
-            }
-
-            if (modal) {
-
-                modal.classList.add("hidden")
-
-            }
-
-            mostrarTelaLogin()
-
-            mostrarToast(
-                "Você saiu do sistema"
-            )
-
-        }
+        sairDoSistema
     )
 
 }
@@ -2566,48 +2552,62 @@ function obterTextoStatusAtendimento(status) {
 
 }
 
-function renderizarSolicitacoes() {
+function obterTextoRequisicao(solicitacao) {
 
-    const container =
-        obterContainerSolicitacoes()
+    return solicitacao.numeroRequisicao ||
+        (
+            solicitacao.requisicoesVinculadas &&
+                solicitacao.requisicoesVinculadas.length > 0
+                ? solicitacao.requisicoesVinculadas.join(", ")
+                : "Aguardando"
+        )
 
-    if (!container) {
+}
 
-        return
+function obterFiltrosSolicitacoes() {
+
+    return {
+
+        mes:
+            document
+                .getElementById("filtroMes")
+                ?.value || "",
+
+        ano:
+            document
+                .getElementById("filtroAno")
+                ?.value
+                ?.trim() || "",
+
+        status:
+            document
+                .getElementById("filtroStatus")
+                ?.value || ""
 
     }
 
-    const filtroMes =
-        document
-            .getElementById("filtroMes")
-            ?.value || ""
+}
 
-    const filtroAno =
-        document
-            .getElementById("filtroAno")
-            ?.value
-            ?.trim() || ""
+function obterSolicitacoesFiltradas() {
 
-    const filtroStatus =
-        document
-            .getElementById("filtroStatus")
-            ?.value || ""
+    const filtros =
+        obterFiltrosSolicitacoes()
 
     let lista =
         [...solicitacoesCarregadas]
 
-    if (filtroStatus) {
+    if (filtros.status) {
 
         lista =
             lista.filter(item => {
 
-                return item.statusAtendimento === filtroStatus
+                return item.statusAtendimento === filtros.status
 
             })
 
     }
 
-    if (filtroMes || filtroAno) {
+    if (filtros.mes || filtros.ano) {
 
         lista =
             lista.filter(item => {
@@ -2628,13 +2628,185 @@ function renderizarSolicitacoes() {
                     String(data.getFullYear())
 
                 return (
-                    (!filtroMes || mes === filtroMes) &&
-                    (!filtroAno || ano === filtroAno)
+                    (!filtros.mes || mes === filtros.mes) &&
+                    (!filtros.ano || ano === filtros.ano)
                 )
 
             })
 
     }
+
+    return lista
+
+}
+
+function prepararCampoCsv(valor) {
+
+    const texto =
+        String(valor ?? "")
+            .replace(/\r?\n/g, " ")
+            .trim()
+
+    return `"${texto.replace(/"/g, '""')}"`
+
+}
+
+function baixarArquivoTexto(nomeArquivo, conteudo, tipo) {
+
+    const blob =
+        new Blob(
+            [conteudo],
+            {
+                type:
+                    tipo
+            }
+        )
+
+    const url =
+        URL.createObjectURL(blob)
+
+    const link =
+        document.createElement("a")
+
+    link.href =
+        url
+
+    link.download =
+        nomeArquivo
+
+    document.body.appendChild(link)
+
+    link.click()
+
+    link.remove()
+
+    setTimeout(
+        () => URL.revokeObjectURL(url),
+        1000
+    )
+
+}
+
+function montarNomeRelatorio() {
+
+    const hoje =
+        new Date()
+
+    const data =
+        hoje.toISOString().slice(0, 10)
+
+    return `relatorio-solicitacoes-${data}.csv`
+
+}
+
+function gerarRelatorioSolicitacoes() {
+
+    const lista =
+        obterSolicitacoesFiltradas()
+
+    if (lista.length === 0) {
+
+        mostrarToast(
+            "Nenhuma solicitação para gerar relatório"
+        )
+
+        return
+
+    }
+
+    const cabecalho = [
+        "Data",
+        "GLPI",
+        "Status",
+        "Requisicao",
+        "Solicitante",
+        "Matricula solicitante",
+        "Retirada por",
+        "Matricula retirada",
+        "Local de uso",
+        "Codigo material",
+        "Descricao material",
+        "Almoxarifado",
+        "Quantidade"
+    ]
+
+    const linhas = []
+
+    lista.forEach(solicitacao => {
+
+        const itens =
+            solicitacao.itens?.length
+                ? solicitacao.itens
+                : [{}]
+
+        itens.forEach(item => {
+
+            linhas.push([
+                solicitacao.criadoEmFormatado ||
+                    solicitacao.dataLocal ||
+                    "",
+                solicitacao.glpi || "",
+                obterTextoStatusAtendimento(
+                    solicitacao.statusAtendimento
+                ),
+                obterTextoRequisicao(solicitacao),
+                solicitacao.usuarioNome ||
+                    solicitacao.usuarioSolicitante ||
+                    "",
+                solicitacao.usuarioMatricula || "",
+                solicitacao.nomeRetirada || "",
+                solicitacao.matriculaRetirada || "",
+                solicitacao.localUso || "",
+                item.codigo || "",
+                item.descricao || "",
+                item.almoxarifado || "",
+                item.quantidade || ""
+            ])
+
+        })
+
+    })
+
+    const conteudo =
+        "\uFEFF" +
+        [
+            cabecalho,
+            ...linhas
+        ]
+            .map(linha => {
+
+                return linha
+                    .map(prepararCampoCsv)
+                    .join(";")
+
+            })
+            .join("\n")
+
+    baixarArquivoTexto(
+        montarNomeRelatorio(),
+        conteudo,
+        "text/csv;charset=utf-8"
+    )
+
+    mostrarToast(
+        "Relatório gerado"
+    )
+
+}
+
+function renderizarSolicitacoes() {
+
+    const container =
+        obterContainerSolicitacoes()
+
+    if (!container) {
+
+        return
+
+    }
+
+    const lista =
+        obterSolicitacoesFiltradas()
 
     container.innerHTML = ""
 
@@ -2674,13 +2846,7 @@ function renderizarSolicitacoes() {
             "Data não informada"
 
         const requisicaoTexto =
-            solicitacao.numeroRequisicao ||
-            (
-                solicitacao.requisicoesVinculadas &&
-                    solicitacao.requisicoesVinculadas.length > 0
-                    ? solicitacao.requisicoesVinculadas.join(", ")
-                    : "Aguardando"
-            )
+            obterTextoRequisicao(solicitacao)
 
         const itensHtml =
             (solicitacao.itens || [])
