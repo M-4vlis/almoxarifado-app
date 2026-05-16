@@ -453,6 +453,82 @@ function normalizarSolicitacaoFirebase(documento) {
 }
 
 // =========================
+// NORMALIZAR MATERIAL
+// =========================
+
+function normalizarMaterialFirebase(documento) {
+
+    const dados =
+        documento.data()
+
+    return {
+
+        id:
+            documento.id,
+
+        codigo:
+            dados.codigo || "",
+
+        descricao:
+            dados.descricao || "",
+
+        almoxarifado:
+            dados.almoxarifado || "",
+
+        estoque:
+            Number(dados.estoque || 0),
+
+        disponivel:
+            dados.disponivel === true,
+
+        ativo:
+            dados.ativo !== false
+
+    }
+
+}
+
+// =========================
+// LISTAR MATERIAIS
+// =========================
+
+async function listarMateriaisFirebase() {
+
+    const referencia =
+        collection(db, "materiais")
+
+    const consulta =
+        query(
+            referencia,
+            orderBy(
+                "descricao",
+                "asc"
+            )
+        )
+
+    const snapshot =
+        await getDocs(consulta)
+
+    const materiais = []
+
+    snapshot.forEach(documento => {
+
+        const material =
+            normalizarMaterialFirebase(documento)
+
+        if (material.ativo) {
+
+            materiais.push(material)
+
+        }
+
+    })
+
+    return materiais
+
+}
+
+// =========================
 // LISTAR MINHAS SOLICITAÇÕES
 // =========================
 
@@ -568,6 +644,7 @@ export {
     logoutFirebase,
     observarUsuarioLogado,
     buscarUsuarioFirebase,
+    listarMateriaisFirebase,
     salvarSolicitacaoFirebase,
     listarMinhasSolicitacoesFirebase,
     listarTodasSolicitacoesFirebase,

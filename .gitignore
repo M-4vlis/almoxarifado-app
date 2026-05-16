@@ -1,5 +1,23 @@
 __pycache__/
 *.pyc
 venv/
+
+# Configuracoes locais
 .env
+.env.*
+!.env.example
 contexto_do_projeto.md
+firebase-debug.log
+
+# Chaves privadas e credenciais
+*firebase-adminsdk*.json
+*service-account*.json
+*serviceAccount*.json
+*private-key*.json
+chaves-firebase/
+
+# Dados locais importados para o Firestore
+data/*.xlsx
+data/colaboradores.json
+data/requisicoes.json
+data/materiais.json

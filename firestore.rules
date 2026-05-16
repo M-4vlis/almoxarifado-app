@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function estaLogado() {
+      return request.auth != null;
+    }
+
+    function dadosUsuario() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function ehAdmin() {
+      return estaLogado()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && dadosUsuario().perfil == "admin"
+        && dadosUsuario().ativo == true;
+    }
+
+    function ehDono(uid) {
+      return estaLogado() && request.auth.uid == uid;
+    }
+
+    match /usuarios/{uid} {
+      allow read: if ehDono(uid) || ehAdmin();
+      allow create, update, delete: if ehAdmin();
+    }
+
+    match /materiais/{materialId} {
+      allow read: if estaLogado();
+      allow create, update, delete: if ehAdmin();
+    }
+
+    match /solicitacoes/{solicitacaoId} {
+      allow create: if estaLogado()
+        && request.resource.data.usuarioUid == request.auth.uid;
+
+      allow read: if ehAdmin()
+        || resource.data.usuarioUid == request.auth.uid;
+
+      allow update, delete: if ehAdmin();
+    }
+
+    match /vinculosRequisicoes/{vinculoId} {
+      allow read: if ehAdmin();
+      allow create, update, delete: if ehAdmin();
+    }
+
+    match /requisicoesPorGlpi/{glpiId} {
+      allow read: if ehAdmin();
+      allow create, update, delete: if ehAdmin();
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import {
     loginFirebase,
     logoutFirebase,
+    listarMateriaisFirebase,
     salvarSolicitacaoFirebase,
     listarSolicitacoesPorPerfilFirebase
 } from "./firebase.js"
@@ -1494,6 +1495,15 @@ if (btnSair) {
 // CARREGAR MATERIAIS
 // =========================
 
+async function carregarMateriaisJsonLocal() {
+
+    const resposta =
+        await fetch("data/materiais.json")
+
+    return await resposta.json()
+
+}
+
 async function carregarMateriais() {
 
     try {
@@ -1504,11 +1514,15 @@ async function carregarMateriais() {
 
         }
 
-        const resposta =
-            await fetch("data/materiais.json")
-
         materiais =
-            await resposta.json()
+            await listarMateriaisFirebase()
+
+        if (!materiais || materiais.length === 0) {
+
+            materiais =
+                await carregarMateriaisJsonLocal()
+
+        }
 
         console.log(
             "Materiais carregados:",
@@ -1546,9 +1560,56 @@ async function carregarMateriais() {
     catch (erro) {
 
         console.error(
-            "Erro ao carregar materiais:",
+            "Erro ao carregar materiais do Firebase:",
             erro
         )
+
+        try {
+
+            materiais =
+                await carregarMateriaisJsonLocal()
+
+            console.log(
+                "Materiais carregados do JSON local:",
+                materiais.length
+            )
+
+            fuse = new Fuse(materiais, {
+
+                includeScore: true,
+
+                threshold: 0.3,
+
+                ignoreLocation: true,
+
+                minMatchCharLength: 2,
+
+                keys: [
+
+                    {
+                        name: "descricao",
+                        weight: 0.8
+                    },
+
+                    {
+                        name: "codigo",
+                        weight: 0.2
+                    }
+
+                ]
+
+            })
+
+        }
+
+        catch (erroJson) {
+
+            console.error(
+                "Erro ao carregar materiais do JSON local:",
+                erroJson
+            )
+
+        }
 
     }
 
