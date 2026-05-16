@@ -188,7 +188,7 @@
                                 Almoxarifado Inteligente
                             </h1>
 
-                            <p>
+                            <p id="homeSaudacao">
                                 Acompanhe suas solicitações e consulte materiais com rapidez.
                             </p>
 
@@ -290,6 +290,28 @@
 
                         </div>
 
+                        <div class="dashboard-card">
+
+                            <div class="dashboard-card-icon">
+
+                                <i class="fa-solid fa-boxes-stacked"></i>
+
+                            </div>
+
+                            <div>
+
+                                <span>
+                                    Materiais solicitados
+                                </span>
+
+                                <strong id="totalMateriaisSolicitados">
+                                    —
+                                </strong>
+
+                            </div>
+
+                        </div>
+
                     </section>
 
                     <section class="quick-actions">
@@ -308,7 +330,7 @@
 
                         <div class="quick-actions-grid">
 
-                            <button id="atalhoNovaBusca" class="quick-action-card">
+                            <button id="atalhoNovaBusca" class="quick-action-card" type="button">
 
                                 <i class="fa-solid fa-magnifying-glass"></i>
 
@@ -318,7 +340,7 @@
 
                             </button>
 
-                            <button id="atalhoSolicitacoes" class="quick-action-card">
+                            <button id="atalhoSolicitacoes" class="quick-action-card" type="button">
 
                                 <i class="fa-solid fa-file-lines"></i>
 
@@ -327,6 +349,36 @@
                                 </span>
 
                             </button>
+
+                        </div>
+
+                    </section>
+
+                    <section class="recent-requests">
+
+                        <div class="section-header-simple">
+
+                            <span>
+                                Última atividade
+                            </span>
+
+                            <h2>
+                                Solicitações recentes
+                            </h2>
+
+                        </div>
+
+                        <div id="homeSolicitacoesRecentes" class="home-recentes">
+
+                            <div class="empty-state">
+
+                                <i class="fa-solid fa-spinner fa-spin"></i>
+
+                                <p>
+                                    Carregando informações...
+                                </p>
+
+                            </div>
 
                         </div>
 
@@ -549,7 +601,8 @@
 
                                 </label>
 
-                                <input type="number" id="filtroAno" placeholder="Ex: 2026">
+                                <input type="text" id="filtroAno" placeholder="Ex: 2026" inputmode="numeric"
+                                    autocomplete="off">
 
                             </div>
 
@@ -711,7 +764,7 @@
 
         <nav id="bottomNav" class="bottom-nav">
 
-            <button class="bottom-nav-item active" data-page="inicio">
+            <button class="bottom-nav-item active" data-page="inicio" type="button">
 
                 <i class="fa-solid fa-house"></i>
 
@@ -721,7 +774,7 @@
 
             </button>
 
-            <button class="bottom-nav-item" data-page="busca">
+            <button class="bottom-nav-item" data-page="busca" type="button">
 
                 <i class="fa-solid fa-magnifying-glass"></i>
 
@@ -731,7 +784,7 @@
 
             </button>
 
-            <button class="bottom-nav-item" data-page="solicitacoes">
+            <button class="bottom-nav-item" data-page="solicitacoes" type="button">
 
                 <i class="fa-solid fa-clipboard-list"></i>
 
@@ -741,7 +794,7 @@
 
             </button>
 
-            <button class="bottom-nav-item" data-page="perfil">
+            <button class="bottom-nav-item" data-page="perfil" type="button">
 
                 <i class="fa-solid fa-user"></i>
 
@@ -861,7 +914,8 @@
 
                     </label>
 
-                    <input type="number" id="glpi" placeholder="Ex: 2025018961">
+                    <input type="text" id="glpi" placeholder="Ex: 2025018961" inputmode="numeric"
+                        autocomplete="off">
 
                 </div>
 
@@ -889,7 +943,8 @@
 
                     </label>
 
-                    <input type="number" id="matricula" placeholder="Ex: 5376">
+                    <input type="text" id="matricula" placeholder="Ex: 0005376" inputmode="numeric"
+                        autocomplete="off">
 
                 </div>
 

@@ -1294,6 +1294,984 @@ body.light-mode .login-footer {
 
 }
 
+/* Reforco final para regras que precisam vencer estilos antigos. */
+
+.app-page {
+
+    display:
+        none;
+
+}
+
+.app-page.active {
+
+    display:
+        block;
+
+}
+
+.bottom-nav-item {
+
+    letter-spacing:
+        0;
+
+}
+
+.modal,
+.drawer {
+
+    z-index:
+        10000;
+
+}
+
+.modal-content {
+
+    z-index:
+        10001;
+
+}
+
+/* =========================
+   AJUSTE FINAL: TELAS ESTATICAS MOBILE-FIRST
+========================= */
+
+.app-shell {
+
+    width:
+        100%;
+
+}
+
+.app-page {
+
+    display:
+        none;
+
+    width:
+        100%;
+
+    animation:
+        fadePage 0.28s ease;
+
+}
+
+.app-page.active {
+
+    display:
+        block;
+
+}
+
+.app-page .container {
+
+    width:
+        100%;
+
+    max-width:
+        760px;
+
+    padding-top:
+        72px;
+
+    padding-bottom:
+        18px;
+
+}
+
+.home-header,
+.page-header {
+
+    text-align:
+        left;
+
+    margin-bottom:
+        18px;
+
+}
+
+.home-header {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        14px;
+
+}
+
+.home-header .logo {
+
+    width:
+        58px;
+
+    height:
+        58px;
+
+    margin:
+        0;
+
+    border-radius:
+        20px;
+
+    font-size:
+        24px;
+
+    flex-shrink:
+        0;
+
+}
+
+.home-header .home-title {
+
+    min-width:
+        0;
+
+    font-size:
+        inherit;
+
+}
+
+.home-header .home-title span,
+.page-header span,
+.section-kicker,
+.section-header-simple span {
+
+    display:
+        inline-block;
+
+    color:
+        var(--primary-light);
+
+    font-size:
+        12px;
+
+    font-weight:
+        800;
+
+    margin-bottom:
+        5px;
+
+}
+
+.home-header .home-title h1,
+.page-header h1,
+.historico-header h2,
+.section-header-simple h2 {
+
+    font-size:
+        24px;
+
+    line-height:
+        1.15;
+
+    font-weight:
+        800;
+
+    margin-bottom:
+        6px;
+
+}
+
+.home-header .home-title p,
+.page-header p,
+.historico-header p {
+
+    color:
+        var(--muted);
+
+    font-size:
+        14px;
+
+    line-height:
+        1.45;
+
+}
+
+.dashboard-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap:
+        12px;
+
+    margin:
+        18px 0;
+
+}
+
+.dashboard-card,
+.quick-action-card,
+.home-recente-card,
+.perfil-card,
+.solicitacao-card {
+
+    background:
+        var(--card);
+
+    border:
+        1px solid var(--card-border);
+
+    box-shadow:
+        var(--shadow);
+
+    backdrop-filter:
+        blur(18px);
+
+}
+
+.dashboard-card {
+
+    min-height:
+        110px;
+
+    border-radius:
+        22px;
+
+    padding:
+        16px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    justify-content:
+        space-between;
+
+    gap:
+        12px;
+
+}
+
+.dashboard-card-icon {
+
+    width:
+        40px;
+
+    height:
+        40px;
+
+    border-radius:
+        15px;
+
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    color:
+        white;
+
+    background:
+        linear-gradient(135deg,
+            #2563eb,
+            #60a5fa);
+
+}
+
+.dashboard-card-icon.warning {
+
+    background:
+        linear-gradient(135deg,
+            #d97706,
+            #f59e0b);
+
+}
+
+.dashboard-card-icon.success {
+
+    background:
+        linear-gradient(135deg,
+            #15803d,
+            #22c55e);
+
+}
+
+.dashboard-card span {
+
+    display:
+        block;
+
+    color:
+        var(--muted);
+
+    font-size:
+        12px;
+
+    font-weight:
+        800;
+
+    line-height:
+        1.3;
+
+    margin-bottom:
+        4px;
+
+}
+
+.dashboard-card strong {
+
+    display:
+        block;
+
+    font-size:
+        26px;
+
+    font-weight:
+        900;
+
+    line-height:
+        1;
+
+}
+
+.quick-actions,
+.recent-requests,
+.secao-solicitacoes,
+.perfil-actions {
+
+    margin-top:
+        20px;
+
+}
+
+.quick-actions-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap:
+        12px;
+
+}
+
+.quick-action-card {
+
+    min-height:
+        92px;
+
+    border-radius:
+        22px;
+
+    padding:
+        16px;
+
+    color:
+        var(--text);
+
+    cursor:
+        pointer;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    align-items:
+        flex-start;
+
+    justify-content:
+        space-between;
+
+    gap:
+        12px;
+
+    font-family:
+        inherit;
+
+    font-size:
+        14px;
+
+    font-weight:
+        800;
+
+    text-align:
+        left;
+
+}
+
+.quick-action-card i {
+
+    color:
+        var(--primary-light);
+
+    font-size:
+        22px;
+
+}
+
+.home-recentes,
+.lista-solicitacoes-historico {
+
+    display:
+        grid;
+
+    gap:
+        14px;
+
+    margin-top:
+        12px;
+
+}
+
+.home-recente-card {
+
+    width:
+        100%;
+
+    border-radius:
+        20px;
+
+    padding:
+        14px;
+
+    color:
+        var(--text);
+
+    cursor:
+        pointer;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap:
+        12px;
+
+    text-align:
+        left;
+
+    font-family:
+        inherit;
+
+}
+
+.home-recente-card span,
+.home-recente-card small {
+
+    display:
+        block;
+
+    color:
+        var(--muted);
+
+    font-size:
+        12px;
+
+    font-weight:
+        700;
+
+}
+
+.home-recente-card strong {
+
+    display:
+        block;
+
+    font-size:
+        15px;
+
+    margin:
+        4px 0;
+
+}
+
+.historico-header {
+
+    display:
+        flex;
+
+    align-items:
+        flex-start;
+
+    justify-content:
+        space-between;
+
+    gap:
+        14px;
+
+    margin-bottom:
+        16px;
+
+}
+
+.filtros-solicitacoes {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap:
+        12px;
+
+    margin-bottom:
+        14px;
+
+}
+
+.acoes-relatorio {
+
+    margin-bottom:
+        16px;
+
+}
+
+.btn-gerar-relatorio,
+.btn-sair-perfil {
+
+    width:
+        100%;
+
+    border:
+        none;
+
+    border-radius:
+        20px;
+
+    padding:
+        15px 16px;
+
+    font-family:
+        inherit;
+
+    font-size:
+        14px;
+
+    font-weight:
+        900;
+
+    cursor:
+        pointer;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    gap:
+        10px;
+
+}
+
+.btn-gerar-relatorio {
+
+    background:
+        rgba(59, 130, 246, 0.14);
+
+    color:
+        var(--primary-light);
+
+}
+
+.btn-sair-perfil {
+
+    background:
+        rgba(239, 68, 68, 0.13);
+
+    color:
+        #fca5a5;
+
+}
+
+body.light-mode .btn-sair-perfil {
+
+    color:
+        #b91c1c;
+
+}
+
+.solicitacao-card {
+
+    border-radius:
+        24px;
+
+    padding:
+        16px;
+
+}
+
+.solicitacao-card-topo {
+
+    display:
+        flex;
+
+    align-items:
+        flex-start;
+
+    justify-content:
+        space-between;
+
+    gap:
+        12px;
+
+    margin-bottom:
+        14px;
+
+}
+
+.solicitacao-card-topo span {
+
+    color:
+        var(--muted);
+
+    font-size:
+        12px;
+
+    font-weight:
+        800;
+
+}
+
+.solicitacao-card-topo h3 {
+
+    font-size:
+        20px;
+
+    font-weight:
+        900;
+
+    line-height:
+        1.15;
+
+    margin-top:
+        3px;
+
+}
+
+.solicitacao-info-grid>div {
+
+    padding:
+        11px;
+
+    border-radius:
+        16px;
+
+    background:
+        rgba(255, 255, 255, 0.04);
+
+    min-width:
+        0;
+
+}
+
+body.light-mode .solicitacao-info-grid>div {
+
+    background:
+        rgba(15, 23, 42, 0.04);
+
+}
+
+.solicitacao-info-grid span,
+.solicitacao-itens>span {
+
+    display:
+        block;
+
+    color:
+        var(--muted);
+
+    font-size:
+        11px;
+
+    font-weight:
+        900;
+
+    margin-bottom:
+        5px;
+
+}
+
+.solicitacao-info-grid strong {
+
+    display:
+        block;
+
+    font-size:
+        13px;
+
+    line-height:
+        1.3;
+
+    word-break:
+        break-word;
+
+}
+
+.solicitacao-itens {
+
+    margin-top:
+        14px;
+
+}
+
+.solicitacao-itens ul {
+
+    list-style:
+        none;
+
+    display:
+        grid;
+
+    gap:
+        10px;
+
+}
+
+.solicitacao-itens li {
+
+    font-size:
+        13px;
+
+    line-height:
+        1.4;
+
+}
+
+.solicitacao-itens small {
+
+    display:
+        block;
+
+    color:
+        var(--muted);
+
+    font-size:
+        12px;
+
+    margin-top:
+        3px;
+
+}
+
+.perfil-card {
+
+    border-radius:
+        26px;
+
+    padding:
+        20px;
+
+    display:
+        grid;
+
+    gap:
+        16px;
+
+}
+
+.perfil-avatar {
+
+    width:
+        62px;
+
+    height:
+        62px;
+
+    border-radius:
+        22px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    color:
+        white;
+
+    background:
+        linear-gradient(135deg,
+            #2563eb,
+            #60a5fa);
+
+    font-size:
+        24px;
+
+}
+
+.perfil-info span {
+
+    display:
+        block;
+
+    color:
+        var(--muted);
+
+    font-size:
+        12px;
+
+    font-weight:
+        800;
+
+    margin-bottom:
+        5px;
+
+}
+
+.perfil-info strong {
+
+    display:
+        block;
+
+    font-size:
+        16px;
+
+    font-weight:
+        900;
+
+    line-height:
+        1.35;
+
+    word-break:
+        break-word;
+
+}
+
+.modal,
+.drawer {
+
+    z-index:
+        10000;
+
+}
+
+.modal-content {
+
+    z-index:
+        10001;
+
+}
+
+.bottom-nav-item {
+
+    letter-spacing:
+        0;
+
+}
+
+@media (min-width: 760px) {
+
+    .perfil-card {
+
+        grid-template-columns:
+            auto 1fr 1fr 1fr;
+
+        align-items:
+            center;
+
+    }
+
+}
+
+@media (max-width: 640px) {
+
+    .app-page .container {
+
+        padding-top:
+            66px;
+
+    }
+
+    .home-header {
+
+        align-items:
+            flex-start;
+
+    }
+
+    .home-header .home-title h1,
+    .page-header h1,
+    .historico-header h2,
+    .section-header-simple h2 {
+
+        font-size:
+            22px;
+
+    }
+
+    .dashboard-grid,
+    .quick-actions-grid,
+    .filtros-solicitacoes {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+    .dashboard-card {
+
+        min-height:
+            auto;
+
+        flex-direction:
+            row;
+
+        align-items:
+            center;
+
+        justify-content:
+            flex-start;
+
+    }
+
+    .historico-header {
+
+        flex-direction:
+            column;
+
+        align-items:
+            stretch;
+
+    }
+
+    .solicitacao-card-topo,
+    .solicitacao-info-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+    .solicitacao-card-topo {
+
+        flex-direction:
+            column;
+
+    }
+
+}
+
 /* =========================
    HEADER
 ========================= */
@@ -4050,5 +5028,43 @@ body.light-mode .bottom-nav-item.active {
             158px;
 
     }
+
+}
+
+/* Reforco final para regras que precisam vencer estilos antigos. */
+
+.app-page {
+
+    display:
+        none;
+
+}
+
+.app-page.active {
+
+    display:
+        block;
+
+}
+
+.bottom-nav-item {
+
+    letter-spacing:
+        0;
+
+}
+
+.modal,
+.drawer {
+
+    z-index:
+        10000;
+
+}
+
+.modal-content {
+
+    z-index:
+        10001;
 
 }

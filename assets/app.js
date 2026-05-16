@@ -17,6 +17,7 @@ let materialSelecionado = null
 let solicitacoesCarregadas = []
 let appJaIniciado = false
 let telaAtual = "inicio"
+let eventosTelasConfigurados = false
 
 // =========================
 // LOGIN
@@ -318,108 +319,50 @@ function limparCarrinhoLocal() {
 
 function criarNavegacaoInferior() {
 
-    if (
+    const nav =
         document.getElementById("bottomNav")
-    ) {
+
+    if (!nav) {
 
         return
 
     }
 
-    const nav =
-        document.createElement("nav")
+    if (nav.dataset.configurada === "true") {
 
-    nav.id =
-        "bottomNav"
+        return
 
-    nav.classList.add(
-        "bottom-nav",
-        "hidden"
-    )
+    }
 
-    nav.innerHTML = `
-        <button
-            id="navInicio"
-            class="bottom-nav-item active"
-            type="button"
-        >
-            <i class="fa-solid fa-house"></i>
-            <span>Início</span>
-        </button>
+    nav.dataset.configurada =
+        "true"
 
-        <button
-            id="navBusca"
-            class="bottom-nav-item"
-            type="button"
-        >
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Busca</span>
-        </button>
+    nav
+        .querySelectorAll(".bottom-nav-item")
+        .forEach(botao => {
 
-        <button
-            id="navSolicitacoes"
-            class="bottom-nav-item"
-            type="button"
-        >
-            <i class="fa-solid fa-clipboard-list"></i>
-            <span>Solicitações</span>
-        </button>
+            botao.type =
+                "button"
 
-        <button
-            id="navPerfil"
-            class="bottom-nav-item"
-            type="button"
-        >
-            <i class="fa-solid fa-user"></i>
-            <span>Perfil</span>
-        </button>
-    `
+            botao.addEventListener(
+                "click",
+                async () => {
 
-    document.body.appendChild(nav)
+                    const pagina =
+                        botao.dataset.page
 
-    document
-        .getElementById("navInicio")
-        .addEventListener(
-            "click",
-            async () => {
+                    if (!pagina) {
 
-                await mostrarTela("inicio")
+                        return
 
-            }
-        )
+                    }
 
-    document
-        .getElementById("navBusca")
-        .addEventListener(
-            "click",
-            async () => {
+                    await mostrarTela(pagina)
 
-                await mostrarTela("busca")
+                }
+            )
 
-            }
-        )
-
-    document
-        .getElementById("navSolicitacoes")
-        .addEventListener(
-            "click",
-            async () => {
-
-                await mostrarTela("solicitacoes")
-
-            }
-        )
-
-    document
-        .getElementById("navPerfil")
-        .addEventListener(
-            "click",
-            async () => {
-
-                await mostrarTela("perfil")
-
-            }
-        )
+        })
 
 }
 
@@ -456,36 +399,12 @@ function marcarNavegacaoAtiva(nomeTela) {
 
     botoes.forEach(botao => {
 
-        botao.classList.remove("active")
-
-    })
-
-    const mapa = {
-
-        inicio:
-            "navInicio",
-
-        busca:
-            "navBusca",
-
-        solicitacoes:
-            "navSolicitacoes",
-
-        perfil:
-            "navPerfil"
-
-    }
-
-    const botaoAtivo =
-        document.getElementById(
-            mapa[nomeTela]
+        botao.classList.toggle(
+            "active",
+            botao.dataset.page === nomeTela
         )
 
-    if (botaoAtivo) {
-
-        botaoAtivo.classList.add("active")
-
-    }
+    })
 
 }
 
@@ -494,6 +413,10 @@ function marcarNavegacaoAtiva(nomeTela) {
 // =========================
 
 function prepararEstruturaTelas() {
+
+    configurarEventosTelas()
+
+    return
 
     if (!appContainer) {
 
@@ -828,6 +751,15 @@ function prepararEstruturaTelas() {
 
 function configurarEventosTelas() {
 
+    if (eventosTelasConfigurados) {
+
+        return
+
+    }
+
+    eventosTelasConfigurados =
+        true
+
     const atalhoNovaBusca =
         document.getElementById("atalhoNovaBusca")
 
@@ -837,11 +769,20 @@ function configurarEventosTelas() {
     const btnSairPerfil =
         document.getElementById("btnSairPerfil")
 
-    const filtroTexto =
-        document.getElementById("filtroSolicitacaoTexto")
+    const filtroMes =
+        document.getElementById("filtroMes")
+
+    const filtroAno =
+        document.getElementById("filtroAno")
 
     const filtroStatus =
-        document.getElementById("filtroSolicitacaoStatus")
+        document.getElementById("filtroStatus")
+
+    const btnAtualizarSolicitacoes =
+        document.getElementById("btnAtualizarSolicitacoes")
+
+    const btnGerarRelatorio =
+        document.getElementById("btnGerarRelatorio")
 
     if (atalhoNovaBusca) {
 
@@ -886,9 +827,18 @@ function configurarEventosTelas() {
 
     }
 
-    if (filtroTexto) {
+    if (filtroMes) {
 
-        filtroTexto.addEventListener(
+        filtroMes.addEventListener(
+            "change",
+            renderizarSolicitacoes
+        )
+
+    }
+
+    if (filtroAno) {
+
+        filtroAno.addEventListener(
             "input",
             renderizarSolicitacoes
         )
@@ -904,6 +854,34 @@ function configurarEventosTelas() {
 
     }
 
+    if (btnAtualizarSolicitacoes) {
+
+        btnAtualizarSolicitacoes.addEventListener(
+            "click",
+            async () => {
+
+                await carregarSolicitacoesUsuario(true)
+
+            }
+        )
+
+    }
+
+    if (btnGerarRelatorio) {
+
+        btnGerarRelatorio.addEventListener(
+            "click",
+            () => {
+
+                mostrarToast(
+                    "Relatório será implementado na próxima etapa"
+                )
+
+            }
+        )
+
+    }
+
 }
 
 // =========================
@@ -912,50 +890,59 @@ function configurarEventosTelas() {
 
 async function mostrarTela(nomeTela) {
 
+    const mapa = {
+
+        inicio:
+            "telaInicio",
+
+        busca:
+            "telaBusca",
+
+        solicitacoes:
+            "telaSolicitacoes",
+
+        perfil:
+            "telaPerfil"
+
+    }
+
+    const telaEscolhida =
+        mapa[nomeTela]
+            ? nomeTela
+            : "inicio"
+
     telaAtual =
-        nomeTela
+        telaEscolhida
 
     const telas =
-        document.querySelectorAll(".app-view")
+        document.querySelectorAll(".app-page")
 
     telas.forEach(tela => {
 
         tela.classList.add("hidden")
 
+        tela.classList.remove("active")
+
     })
-
-    const mapa = {
-
-        inicio:
-            "viewInicio",
-
-        busca:
-            "viewBusca",
-
-        solicitacoes:
-            "viewSolicitacoes",
-
-        perfil:
-            "viewPerfil"
-
-    }
 
     const tela =
         document.getElementById(
-            mapa[nomeTela]
+            mapa[telaEscolhida]
         )
 
     if (tela) {
 
         tela.classList.remove("hidden")
 
+        tela.classList.add("active")
+
     }
 
-    marcarNavegacaoAtiva(nomeTela)
+    marcarNavegacaoAtiva(telaEscolhida)
 
     atualizarCarrinho()
 
-    if (nomeTela === "inicio") {
+    if (telaEscolhida === "inicio") {
 
         await carregarSolicitacoesUsuario(false)
 
@@ -963,13 +950,13 @@ async function mostrarTela(nomeTela) {
 
     }
 
-    if (nomeTela === "solicitacoes") {
+    if (telaEscolhida === "solicitacoes") {
 
         await carregarSolicitacoesUsuario(true)
 
     }
 
-    if (nomeTela === "perfil") {
+    if (telaEscolhida === "perfil") {
 
         atualizarTelaPerfil()
 
@@ -1030,6 +1017,18 @@ function atualizarDashboardInicio() {
         )
 
     const campos = {
+
+        totalMinhasSolicitacoes:
+            totalSolicitacoes,
+
+        totalAguardandoRequisicao:
+            aguardando,
+
+        totalRequisicoesVinculadas:
+            vinculadas,
+
+        totalMateriaisSolicitados:
+            totalItens,
 
         homeTotalSolicitacoes:
             totalSolicitacoes,
@@ -1181,6 +1180,15 @@ function atualizarTelaPerfil() {
             : "Inativo"
 
     const campos = {
+
+        perfilUsuarioNome:
+            nome,
+
+        perfilUsuarioMatricula:
+            matricula,
+
+        perfilUsuarioPerfil:
+            perfil,
 
         perfilNome:
             nome,
@@ -2425,6 +2433,43 @@ if (btnEnviarWhatsapp) {
 // LISTAR SOLICITAÇÕES
 // =========================
 
+function obterContainerSolicitacoes() {
+
+    return (
+        document.getElementById("listaSolicitacoesHistorico") ||
+        document.getElementById("listaSolicitacoesUsuario")
+    )
+
+}
+
+function obterDataSolicitacao(solicitacao) {
+
+    if (solicitacao.criadoEm?.toDate) {
+
+        return solicitacao.criadoEm.toDate()
+
+    }
+
+    const dataLocal =
+        solicitacao.dataLocal || ""
+
+    const partes =
+        dataLocal.match(/(\d{2})\/(\d{2})\/(\d{4})/)
+
+    if (!partes) {
+
+        return null
+
+    }
+
+    return new Date(
+        Number(partes[3]),
+        Number(partes[2]) - 1,
+        Number(partes[1])
+    )
+
+}
+
 async function carregarSolicitacoesUsuario(renderizarTela) {
 
     const usuario =
@@ -2439,7 +2484,7 @@ async function carregarSolicitacoesUsuario(renderizarTela) {
     if (renderizarTela) {
 
         const container =
-            document.getElementById("listaSolicitacoesUsuario")
+            obterContainerSolicitacoes()
 
         if (container) {
 
@@ -2480,7 +2525,7 @@ async function carregarSolicitacoesUsuario(renderizarTela) {
         if (renderizarTela) {
 
             const container =
-                document.getElementById("listaSolicitacoesUsuario")
+                obterContainerSolicitacoes()
 
             if (container) {
 
@@ -2524,7 +2569,7 @@ function obterTextoStatusAtendimento(status) {
 function renderizarSolicitacoes() {
 
     const container =
-        document.getElementById("listaSolicitacoesUsuario")
+        obterContainerSolicitacoes()
 
     if (!container) {
 
@@ -2532,22 +2577,26 @@ function renderizarSolicitacoes() {
 
     }
 
-    const filtroTexto =
+    const filtroMes =
         document
-            .getElementById("filtroSolicitacaoTexto")
+            .getElementById("filtroMes")
+            ?.value || ""
+
+    const filtroAno =
+        document
+            .getElementById("filtroAno")
             ?.value
-            ?.toLowerCase()
             ?.trim() || ""
 
     const filtroStatus =
         document
-            .getElementById("filtroSolicitacaoStatus")
-            ?.value || "todos"
+            .getElementById("filtroStatus")
+            ?.value || ""
 
     let lista =
         [...solicitacoesCarregadas]
 
-    if (filtroStatus !== "todos") {
+    if (filtroStatus) {
 
         lista =
             lista.filter(item => {
@@ -2558,31 +2607,29 @@ function renderizarSolicitacoes() {
 
     }
 
-    if (filtroTexto) {
+    if (filtroMes || filtroAno) {
 
         lista =
             lista.filter(item => {
 
-                const textoGeral =
-                    [
-                        item.glpi,
-                        item.numeroRequisicao,
-                        item.nomeRetirada,
-                        item.matriculaRetirada,
-                        item.localUso,
-                        item.usuarioNome,
-                        item.usuarioMatricula,
-                        ...(item.itens || []).map(material => {
+                const data =
+                    obterDataSolicitacao(item)
 
-                            return `${material.codigo} ${material.descricao}`
+                if (!data) {
 
-                        })
-                    ]
-                        .join(" ")
-                        .toLowerCase()
+                    return false
 
-                return textoGeral.includes(
-                    filtroTexto
+                }
+
+                const mes =
+                    String(data.getMonth() + 1).padStart(2, "0")
+
+                const ano =
+                    String(data.getFullYear())
+
+                return (
+                    (!filtroMes || mes === filtroMes) &&
+                    (!filtroAno || ano === filtroAno)
                 )
 
             })
