@@ -814,13 +814,9 @@ function configurarEventosTelas() {
     [
         "filtroDataInicio",
         "filtroDataFim",
-        "filtroStatus",
         "filtroGlpi",
-        "filtroRequisicao",
         "filtroMaterial",
         "filtroAlmoxarifado",
-        "filtroValorMinimo",
-        "filtroValorMaximo",
         "filtroUsuarioNome",
         "filtroUsuarioMatricula",
         "filtroUsuarioPerfil"
@@ -2748,30 +2744,6 @@ function obterDataInputSolicitacao(solicitacao) {
 
 }
 
-function tratarValorFiltro(valor) {
-
-    if (valor === "" || valor === null || valor === undefined) {
-
-        return null
-
-    }
-
-    const numero =
-        Number(
-            String(valor)
-                .replace(",", ".")
-        )
-
-    if (!Number.isFinite(numero)) {
-
-        return null
-
-    }
-
-    return numero
-
-}
-
 function obterTotalEstimadoSolicitacao(solicitacao) {
 
     const totalEstimado =
@@ -2901,20 +2873,9 @@ function obterFiltrosSolicitacoes() {
                 .getElementById("filtroDataFim")
                 ?.value || "",
 
-        status:
-            document
-                .getElementById("filtroStatus")
-                ?.value || "",
-
         glpi:
             document
                 .getElementById("filtroGlpi")
-                ?.value
-                ?.trim() || "",
-
-        requisicao:
-            document
-                .getElementById("filtroRequisicao")
                 ?.value
                 ?.trim() || "",
 
@@ -2928,20 +2889,6 @@ function obterFiltrosSolicitacoes() {
             document
                 .getElementById("filtroAlmoxarifado")
                 ?.value || "",
-
-        valorMinimo:
-            tratarValorFiltro(
-                document
-                    .getElementById("filtroValorMinimo")
-                    ?.value
-            ),
-
-        valorMaximo:
-            tratarValorFiltro(
-                document
-                    .getElementById("filtroValorMaximo")
-                    ?.value
-            ),
 
         usuarioNome:
             document
@@ -2974,17 +2921,6 @@ function obterSolicitacoesFiltradas() {
 
     const usuarioAdmin =
         usuarioEhAdmin()
-
-    if (filtros.status) {
-
-        lista =
-            lista.filter(item => {
-
-                return item.statusAtendimento === filtros.status
-
-            })
-
-    }
 
     if (filtros.dataInicio || filtros.dataFim) {
 
@@ -3023,23 +2959,6 @@ function obterSolicitacoesFiltradas() {
 
     }
 
-    if (filtros.requisicao) {
-
-        lista =
-            lista.filter(item => {
-
-                return textoContem(
-                    [
-                        item.numeroRequisicao || "",
-                        ...(item.requisicoesVinculadas || [])
-                    ].join(" "),
-                    filtros.requisicao
-                )
-
-            })
-
-    }
-
     if (filtros.material) {
 
         lista =
@@ -3070,28 +2989,6 @@ function obterSolicitacoesFiltradas() {
                         return material.almoxarifado === filtros.almoxarifado
 
                     })
-
-            })
-
-    }
-
-    if (filtros.valorMinimo !== null) {
-
-        lista =
-            lista.filter(item => {
-
-                return obterTotalEstimadoSolicitacao(item) >= filtros.valorMinimo
-
-            })
-
-    }
-
-    if (filtros.valorMaximo !== null) {
-
-        lista =
-            lista.filter(item => {
-
-                return obterTotalEstimadoSolicitacao(item) <= filtros.valorMaximo
 
             })
 
@@ -3147,13 +3044,9 @@ function limparFiltrosSolicitacoes() {
     [
         "filtroDataInicio",
         "filtroDataFim",
-        "filtroStatus",
         "filtroGlpi",
-        "filtroRequisicao",
         "filtroMaterial",
         "filtroAlmoxarifado",
-        "filtroValorMinimo",
-        "filtroValorMaximo",
         "filtroUsuarioNome",
         "filtroUsuarioMatricula",
         "filtroUsuarioPerfil"
