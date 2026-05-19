@@ -287,6 +287,8 @@ function carregarCarrinhoLocal() {
         listaSolicitacao =
             JSON.parse(dados)
 
+        recalcularListaSolicitacao()
+
     }
 
     catch (erro) {
@@ -1080,6 +1082,194 @@ function atualizarDashboardInicio() {
 
 }
 
+function converterValorNumero(valor) {
+
+    if (typeof valor === "string") {
+
+        let texto =
+            valor
+                .trim()
+                .replace("R$", "")
+                .replace(/\s/g, "")
+
+        if (texto.includes(",") && texto.includes(".")) {
+
+            if (texto.lastIndexOf(",") > texto.lastIndexOf(".")) {
+
+                texto =
+                    texto
+                        .replace(/\./g, "")
+                        .replace(",", ".")
+
+            }
+
+            else {
+
+                texto =
+                    texto.replace(/,/g, "")
+
+            }
+
+        }
+
+        else if (texto.includes(",")) {
+
+            texto =
+                texto
+                    .replace(/\./g, "")
+                    .replace(",", ".")
+
+        }
+
+        valor =
+            texto
+
+    }
+
+    const numero =
+        Number(valor || 0)
+
+    if (!Number.isFinite(numero)) {
+
+        return 0
+
+    }
+
+    return numero
+
+}
+
+function formatarMoedaTexto(valor) {
+
+    const numero =
+        converterValorNumero(valor)
+
+    return numero.toLocaleString(
+        "pt-BR",
+        {
+            style:
+                "currency",
+            currency:
+                "BRL"
+        }
+    )
+
+}
+
+function obterValorUnitarioNumeroMaterial(material) {
+
+    return converterValorNumero(
+        material?.valorUnitarioNumero ||
+        material?.valorUnitario
+    )
+
+}
+
+function obterValorUnitarioTextoMaterial(material) {
+
+    const valorNumero =
+        obterValorUnitarioNumeroMaterial(material)
+
+    return (
+        material?.valorUnitario ||
+        formatarMoedaTexto(valorNumero)
+    )
+
+}
+
+function buscarMaterialPorItem(item) {
+
+    const codigo =
+        String(item?.codigo || "").trim()
+
+    const almoxarifado =
+        String(item?.almoxarifado || "").trim().toUpperCase()
+
+    if (!codigo) {
+
+        return null
+
+    }
+
+    return materiais.find(material => {
+
+        const mesmoCodigo =
+            String(material.codigo || "").trim() === codigo
+
+        const mesmoAlmoxarifado =
+            !almoxarifado ||
+            String(material.almoxarifado || "").trim().toUpperCase() === almoxarifado
+
+        return mesmoCodigo && mesmoAlmoxarifado
+
+    }) || null
+
+}
+
+function recalcularItemSolicitacao(item) {
+
+    const materialReferencia =
+        buscarMaterialPorItem(item)
+
+    const quantidade =
+        converterValorNumero(item?.quantidade)
+
+    const valorItem =
+        converterValorNumero(
+            item?.valorUnitarioNumero ||
+            item?.valorUnitario
+        )
+
+    const valorReferencia =
+        converterValorNumero(
+            materialReferencia?.valorUnitarioNumero ||
+            materialReferencia?.valorUnitario
+        )
+
+    const valorUnitarioNumero =
+        valorItem > 0
+            ? valorItem
+            : valorReferencia
+
+    const valorUnitario =
+        valorUnitarioNumero === valorReferencia && materialReferencia?.valorUnitario
+            ? materialReferencia.valorUnitario
+            : item?.valorUnitario || formatarMoedaTexto(valorUnitarioNumero)
+
+
+    const valorTotalItem =
+        quantidade * valorUnitarioNumero
+
+    item.quantidade =
+        quantidade
+
+    item.valorUnitario =
+        valorUnitario
+
+    item.valorUnitarioNumero =
+        valorUnitarioNumero
+
+    item.valorTotalItem =
+        valorTotalItem
+
+    item.subtotal =
+        valorTotalItem
+
+    return item
+
+}
+
+function recalcularListaSolicitacao() {
+
+    listaSolicitacao =
+        listaSolicitacao.map(item => {
+
+            return recalcularItemSolicitacao(item)
+
+        })
+
+}
+
 function alternarBlocosInicio(admin) {
 
     const filtrosAdmin =
@@ -1162,7 +1352,24 @@ function obterResumoDashboard(lista) {
         lista.reduce(
             (total, solicitacao) => {
 
-                return total + Number(solicitacao.totalItens || 0)
+                const totalItensSolicitacao =
+                    Number(solicitacao.totalItens || 0)
+
+                if (Number.isFinite(totalItensSolicitacao) && totalItensSolicitacao > 0) {
+
+                    return total + totalItensSolicitacao
+
+                }
+
+                return total + (solicitacao.itens || [])
+                    .reduce(
+                        (subtotal, item) => {
+
+                            return subtotal + converterValorNumero(item.quantidade)
+
+                        },
+                        0
+                    )
 
             },
             0
@@ -1181,6 +1388,15 @@ function obterResumoDashboard(lista) {
     const usuariosSolicitantes =
         new Set()
 
+    const glpis =
+        new Set()
+
+    const requisicoes =
+        new Set()
+
+    const materiaisSolicitados =
+        new Map()
+
     lista.forEach(solicitacao => {
 
         const chave =
@@ -1195,7 +1411,48 @@ function obterResumoDashboard(lista) {
 
         }
 
+        if (solicitacao.glpi) {
+
+            glpis.add(solicitacao.glpi)
+
+        }
+
+        const requisicoesSolicitacao =
+            [
+                solicitacao.numeroRequisicao,
+                ...(solicitacao.requisicoesVinculadas || [])
+            ].filter(Boolean)
+
+        requisicoesSolicitacao.forEach(requisicao => {
+
+            requisicoes.add(requisicao)
+
+        })
+
+        ;(solicitacao.itens || []).forEach(item => {
+
+            const chaveMaterial =
+                `${item.codigo || "-"} - ${item.descricao || "Material"}`
+
+            const quantidade =
+                converterValorNumero(item.quantidade)
+
+            materiaisSolicitados.set(
+                chaveMaterial,
+                (materiaisSolicitados.get(chaveMaterial) || 0) + quantidade
+            )
+
+        })
+
     })
+
+    const itemMaisSolicitado =
+        Array.from(materiaisSolicitados.entries())
+            .sort((a, b) => {
+
+                return b[1] - a[1]
+
+            })[0]
 
     return {
         totalSolicitacoes,
@@ -1204,7 +1461,19 @@ function obterResumoDashboard(lista) {
         totalItens,
         totalEstimado,
         totalUsuarios:
-            usuariosSolicitantes.size
+            usuariosSolicitantes.size,
+        totalGlpis:
+            glpis.size,
+        totalRequisicoes:
+            requisicoes.size,
+        ticketMedio:
+            totalSolicitacoes > 0
+                ? totalEstimado / totalSolicitacoes
+                : 0,
+        itemMaisSolicitado:
+            itemMaisSolicitado
+                ? itemMaisSolicitado[0]
+                : "Sem item"
     }
 
 }
@@ -1216,8 +1485,18 @@ function criarCardResumoDashboard(opcao) {
             ? ` ${opcao.classeIcone}`
             : ""
 
+    const classeCard =
+        opcao.destaque
+            ? " destaque-dashboard"
+            : ""
+
+    const subtitulo =
+        opcao.subtitulo
+            ? `<small>${escaparHtml(opcao.subtitulo)}</small>`
+            : ""
+
     return `
-        <div class="dashboard-card">
+        <div class="dashboard-card${classeCard}">
             <div class="dashboard-card-icon${classeIcone}">
                 <i class="${opcao.icone}"></i>
             </div>
@@ -1225,6 +1504,7 @@ function criarCardResumoDashboard(opcao) {
             <div>
                 <span>${escaparHtml(opcao.rotulo)}</span>
                 <strong>${escaparHtml(opcao.valor)}</strong>
+                ${subtitulo}
             </div>
         </div>
     `
@@ -1252,7 +1532,11 @@ function renderizarResumoDashboard(lista, admin) {
             valor:
                 resumo.totalSolicitacoes,
             icone:
-                "fa-solid fa-clipboard-list"
+                "fa-solid fa-clipboard-list",
+            subtitulo:
+                admin ? "Total no periodo" : "Seu historico",
+            destaque:
+                true
         },
         {
             rotulo:
@@ -1262,7 +1546,9 @@ function renderizarResumoDashboard(lista, admin) {
             icone:
                 "fa-solid fa-hourglass-half",
             classeIcone:
-                "warning"
+                "warning",
+            subtitulo:
+                "Sem requisicao vinculada"
         },
         {
             rotulo:
@@ -1272,7 +1558,9 @@ function renderizarResumoDashboard(lista, admin) {
             icone:
                 "fa-solid fa-circle-check",
             classeIcone:
-                "success"
+                "success",
+            subtitulo:
+                "Com atendimento avancado"
         },
         {
             rotulo:
@@ -1280,11 +1568,15 @@ function renderizarResumoDashboard(lista, admin) {
             valor:
                 formatarMoeda(resumo.totalEstimado) || "R$ 0,00",
             icone:
-                "fa-solid fa-coins"
+                "fa-solid fa-coins",
+            subtitulo:
+                "Baseado nos itens salvos"
         }
     ]
 
     if (admin) {
+
+        cards.splice(1, 2)
 
         cards.push(
             {
@@ -1302,8 +1594,67 @@ function renderizarResumoDashboard(lista, admin) {
                     resumo.totalItens,
                 icone:
                     "fa-solid fa-boxes-stacked"
+            },
+            {
+                rotulo:
+                    "GLPIs registradas",
+                valor:
+                    resumo.totalGlpis,
+                icone:
+                    "fa-solid fa-ticket",
+                subtitulo:
+                    "Chamados informados"
+            },
+            {
+                rotulo:
+                    "Requisicoes vinculadas",
+                valor:
+                    resumo.totalRequisicoes,
+                icone:
+                    "fa-solid fa-file-invoice",
+                subtitulo:
+                    "Numeros preenchidos"
+            },
+            {
+                rotulo:
+                    "Ticket medio",
+                valor:
+                    formatarMoeda(resumo.ticketMedio) || "R$ 0,00",
+                icone:
+                    "fa-solid fa-chart-line",
+                subtitulo:
+                    "Por solicitacao"
+            },
+            {
+                rotulo:
+                    "Item mais solicitado",
+                valor:
+                    resumo.itemMaisSolicitado,
+                icone:
+                    "fa-solid fa-star",
+                classeIcone:
+                    "success",
+                subtitulo:
+                    "Por quantidade"
             }
         )
+
+    }
+
+    else {
+
+        cards.push({
+
+            rotulo:
+                "Materiais solicitados",
+            valor:
+                resumo.totalItens,
+            icone:
+                "fa-solid fa-boxes-stacked",
+            subtitulo:
+                "Itens do seu historico"
+
+        })
 
     }
 
@@ -1533,6 +1884,21 @@ function obterTopRanking(mapa, campo = "total", limite = 5) {
 
 function renderizarListaRanking(titulo, icone, itens, tipoValor = "moeda") {
 
+    const maiorValor =
+        itens.reduce(
+            (maior, item) => {
+
+                const valor =
+                    tipoValor === "quantidade"
+                        ? Number(item.quantidade || 0)
+                        : Number(item.total || 0)
+
+                return Math.max(maior, valor)
+
+            },
+            0
+        )
+
     const linhas =
         itens.length > 0
             ? itens
@@ -1543,11 +1909,24 @@ function renderizarListaRanking(titulo, icone, itens, tipoValor = "moeda") {
                             ? `${item.quantidade || 0}`
                             : formatarMoeda(item.total) || "R$ 0,00"
 
+                    const valorBarra =
+                        tipoValor === "quantidade"
+                            ? Number(item.quantidade || 0)
+                            : Number(item.total || 0)
+
+                    const larguraBarra =
+                        maiorValor > 0
+                            ? Math.max(8, (valorBarra / maiorValor) * 100)
+                            : 0
+
                     return `
                         <li>
                             <div>
                                 <span>${indice + 1}. ${escaparHtml(item.label)}</span>
                                 <small>${escaparHtml(item.detalhe || "")}</small>
+                                <div class="ranking-bar">
+                                    <span style="width: ${larguraBarra}%"></span>
+                                </div>
                             </div>
 
                             <strong>${escaparHtml(valor)}</strong>
@@ -1688,7 +2067,7 @@ function renderizarRankingsAdmin(lista) {
                 Number(item.quantidade || 0)
 
             const subtotal =
-                Number(item.subtotal || 0)
+                obterValorTotalItemDashboard(item)
 
             somarRanking(
                 porMaterial,
@@ -1697,9 +2076,7 @@ function renderizarRankingsAdmin(lista) {
                     quantidade:
                         quantidade,
                     total:
-                        Number.isFinite(subtotal)
-                            ? subtotal
-                            : 0
+                        subtotal
                 },
                 item.almoxarifado || ""
             )
@@ -1711,15 +2088,48 @@ function renderizarRankingsAdmin(lista) {
                     quantidade:
                         quantidade,
                     total:
-                        Number.isFinite(subtotal)
-                            ? subtotal
-                            : 0
+                        subtotal
                 }
             )
 
         })
 
     })
+
+    const recentesHtml =
+        lista
+            .slice()
+            .sort((a, b) => {
+
+                return (obterDataSolicitacao(b)?.getTime() || 0) -
+                    (obterDataSolicitacao(a)?.getTime() || 0)
+
+            })
+            .slice(0, 5)
+            .map(solicitacao => {
+
+                const total =
+                    formatarMoeda(
+                        obterTotalEstimadoSolicitacao(solicitacao)
+                    ) || "R$ 0,00"
+
+                return `
+                    <li>
+                        <div>
+                            <span>GLPI ${escaparHtml(solicitacao.glpi || "-")}</span>
+                            <small>${escaparHtml(obterNomeUsuarioSolicitacao(solicitacao))}</small>
+                        </div>
+
+                        <strong>${escaparHtml(total)}</strong>
+                    </li>
+                `
+
+            })
+            .join("") || `
+                <li class="ranking-empty">
+                    Nenhuma solicitacao recente.
+                </li>
+            `
 
     container.innerHTML = `
         <div class="section-header-simple">
@@ -1769,6 +2179,17 @@ function renderizarRankingsAdmin(lista) {
                 obterTopRanking(porAlmoxarifado, "quantidade"),
                 "quantidade"
             )}
+
+            <div class="ranking-card ranking-card-wide">
+                <div class="ranking-card-header">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <h3>Solicitacoes recentes</h3>
+                </div>
+
+                <ul>
+                    ${recentesHtml}
+                </ul>
+            </div>
         </div>
     `
 
@@ -2341,6 +2762,9 @@ async function carregarMateriais() {
 
         }
 
+        recalcularListaSolicitacao()
+        salvarCarrinhoLocal()
+
     }
 
 }
@@ -2520,26 +2944,35 @@ if (btnAdicionarLista) {
             if (itemExistente) {
 
                 itemExistente.quantidade += 1
+                recalcularItemSolicitacao(itemExistente)
 
             }
 
             else {
 
-                listaSolicitacao.push({
+                listaSolicitacao.push(
+                    recalcularItemSolicitacao({
 
-                    codigo:
-                        materialSelecionado.codigo,
+                        codigo:
+                            materialSelecionado.codigo,
 
-                    descricao:
-                        materialSelecionado.descricao,
+                        descricao:
+                            materialSelecionado.descricao,
 
-                    almoxarifado:
-                        materialSelecionado.almoxarifado,
+                        almoxarifado:
+                            materialSelecionado.almoxarifado,
 
-                    quantidade:
-                        1
+                        quantidade:
+                            1,
 
-                })
+                        valorUnitario:
+                            obterValorUnitarioTextoMaterial(materialSelecionado),
+
+                        valorUnitarioNumero:
+                            obterValorUnitarioNumeroMaterial(materialSelecionado)
+
+                    })
+                )
 
             }
 
@@ -2744,6 +3177,7 @@ function aumentarQuantidade(codigo) {
     if (item) {
 
         item.quantidade += 1
+        recalcularItemSolicitacao(item)
 
     }
 
@@ -2769,6 +3203,7 @@ function diminuirQuantidade(codigo) {
     }
 
     item.quantidade -= 1
+    recalcularItemSolicitacao(item)
 
     if (item.quantidade <= 0) {
 
@@ -2932,26 +3367,56 @@ function montarDadosSolicitacaoFirebase(dadosFormulario) {
     const usuarioLogado =
         obterSessaoUsuario()
 
+    recalcularListaSolicitacao()
+
     const itens =
         listaSolicitacao.map(item => {
+
+            const itemCalculado =
+                recalcularItemSolicitacao(item)
 
             return {
 
                 codigo:
-                    item.codigo,
+                    itemCalculado.codigo,
 
                 descricao:
-                    item.descricao,
+                    itemCalculado.descricao,
 
                 almoxarifado:
-                    item.almoxarifado,
+                    itemCalculado.almoxarifado,
 
                 quantidade:
-                    item.quantidade
+                    itemCalculado.quantidade,
+
+                valorUnitario:
+                    itemCalculado.valorUnitario,
+
+                valorUnitarioNumero:
+                    itemCalculado.valorUnitarioNumero,
+
+                valorTotalItem:
+                    itemCalculado.valorTotalItem,
+
+                subtotal:
+                    itemCalculado.subtotal
 
             }
 
         })
+
+    const valorTotalEstimado =
+        itens.reduce(
+            (total, item) => {
+
+                return total + converterValorNumero(
+                    item.valorTotalItem ||
+                    item.subtotal
+                )
+
+            },
+            0
+        )
 
     return {
 
@@ -3007,6 +3472,12 @@ function montarDadosSolicitacaoFirebase(dadosFormulario) {
                 },
                 0
             ),
+
+        valorTotalEstimado:
+            valorTotalEstimado,
+
+        totalEstimado:
+            valorTotalEstimado,
 
         origem:
             "app_web_github_pages",
@@ -3458,10 +3929,19 @@ function obterDataInputSolicitacao(solicitacao) {
 
 function obterTotalEstimadoSolicitacao(solicitacao) {
 
-    const totalEstimado =
-        Number(solicitacao.totalEstimado || 0)
+    const valorTotalEstimado =
+        converterValorNumero(solicitacao.valorTotalEstimado)
 
-    if (Number.isFinite(totalEstimado) && totalEstimado > 0) {
+    if (valorTotalEstimado > 0) {
+
+        return valorTotalEstimado
+
+    }
+
+    const totalEstimado =
+        converterValorNumero(solicitacao.totalEstimado)
+
+    if (totalEstimado > 0) {
 
         return totalEstimado
 
@@ -3471,16 +3951,58 @@ function obterTotalEstimadoSolicitacao(solicitacao) {
         .reduce(
             (total, item) => {
 
-                const subtotal =
-                    Number(item.subtotal || 0)
-
-                return Number.isFinite(subtotal)
-                    ? total + subtotal
-                    : total
+                return total + obterValorTotalItemDashboard(item)
 
             },
             0
         )
+
+}
+
+function obterValorTotalItemDashboard(item) {
+
+    const valorTotalItem =
+        converterValorNumero(item.valorTotalItem)
+
+    if (valorTotalItem > 0) {
+
+        return valorTotalItem
+
+    }
+
+    const subtotal =
+        converterValorNumero(item.subtotal)
+
+    if (subtotal > 0) {
+
+        return subtotal
+
+    }
+
+    const quantidade =
+        converterValorNumero(item.quantidade)
+
+    const materialReferencia =
+        buscarMaterialPorItem(item)
+
+    const valorItem =
+        converterValorNumero(
+            item.valorUnitarioNumero ||
+            item.valorUnitario
+        )
+
+    const valorReferencia =
+        converterValorNumero(
+            materialReferencia?.valorUnitarioNumero ||
+            materialReferencia?.valorUnitario
+        )
+
+    const valorUnitario =
+        valorItem > 0
+            ? valorItem
+            : valorReferencia
+
+    return quantidade * valorUnitario
 
 }
 
@@ -3888,7 +4410,7 @@ function gerarRelatorioSolicitacoes() {
                 item.almoxarifado || "",
                 item.quantidade || "",
                 item.valorUnitario || "",
-                item.subtotal || ""
+                obterValorTotalItemDashboard(item) || ""
             ])
 
         })
@@ -4038,7 +4560,9 @@ function renderizarSolicitacoes() {
                 .map(item => {
 
                     const subtotalTexto =
-                        formatarMoeda(item.subtotal) || ""
+                        formatarMoeda(
+                            obterValorTotalItemDashboard(item)
+                        ) || ""
 
                     return `
                         <li>
@@ -4414,6 +4938,12 @@ async function iniciarAplicacao() {
     await carregarMateriais()
 
     atualizarCarrinho()
+
+    if (telaAtual === "inicio") {
+
+        atualizarDashboardInicio()
+
+    }
 
 }
 

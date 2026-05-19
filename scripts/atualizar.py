@@ -1,7 +1,9 @@
 import pandas as pd
 import json
+import math
 from pathlib import Path
 import re
+import unicodedata
 from openpyxl import load_workbook
 
 # =========================
@@ -56,6 +58,95 @@ def limpar_texto(valor):
         return ""
 
     return str(valor).strip()
+
+
+def normalizar_cabecalho(valor):
+    texto = limpar_texto(valor)
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = "".join(
+        caractere
+        for caractere in texto
+        if not unicodedata.combining(caractere)
+    )
+    texto = texto.lower()
+    texto = re.sub(r"[^a-z0-9]+", " ", texto)
+    return texto.strip()
+
+
+def obter_coluna(colunas, nomes, obrigatoria=True):
+    mapa = {
+        normalizar_cabecalho(coluna): coluna
+        for coluna in colunas
+    }
+
+    for nome in nomes:
+        coluna = mapa.get(
+            normalizar_cabecalho(nome)
+        )
+
+        if coluna is not None:
+            return coluna
+
+    if obrigatoria:
+        raise Exception(
+            f"Coluna obrigatoria nao encontrada: {nomes[0]}"
+        )
+
+    return None
+
+
+def converter_valor_brasileiro(valor):
+    if pd.isna(valor):
+        return 0
+
+    if isinstance(valor, str):
+        texto = valor.strip()
+        texto = texto.replace("R$", "")
+        texto = texto.replace("\xa0", "")
+        texto = texto.replace(" ", "")
+
+        if "," in texto and "." in texto:
+            if texto.rfind(",") > texto.rfind("."):
+                texto = texto.replace(".", "")
+                texto = texto.replace(",", ".")
+            else:
+                texto = texto.replace(",", "")
+
+        elif "," in texto:
+            texto = texto.replace(".", "")
+            texto = texto.replace(",", ".")
+
+        valor = texto
+
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        return 0
+
+    if not math.isfinite(numero):
+        return 0
+
+    return numero
+
+
+def formatar_valor_unitario(valor):
+    numero = converter_valor_brasileiro(valor)
+
+    texto = f"R$ {numero:,.2f}"
+    texto = texto.replace(",", "X")
+    texto = texto.replace(".", ",")
+    texto = texto.replace("X", ".")
+
+    return texto
+
+
+def preparar_valor_unitario(valor):
+    numero = converter_valor_brasileiro(valor)
+
+    return {
+        "valorUnitario": formatar_valor_unitario(numero),
+        "valorUnitarioNumero": numero,
+    }
 
 
 def formatar_valor_excel_com_zeros(celula):
@@ -180,11 +271,63 @@ def gerar_materiais_json():
             sheet_name=aba
         )
 
+        coluna_codigo = obter_coluna(
+            df.columns,
+            [
+                "Cód",
+                "Cod",
+                "Codigo",
+                "Código",
+            ],
+        )
+
+        coluna_material = obter_coluna(
+            df.columns,
+            [
+                "Material",
+            ],
+        )
+
+        coluna_estoque = obter_coluna(
+            df.columns,
+            [
+                "Estoque",
+            ],
+        )
+
+        coluna_valor_unitario = obter_coluna(
+            df.columns,
+            [
+                "Valor Unitário",
+                "Valor unitário",
+                "VALOR UNITÁRIO",
+                "Valor Unitario",
+                "Valor",
+                "VALOR",
+            ],
+            obrigatoria=False,
+        )
+
+        if not coluna_valor_unitario:
+            print(
+                "AVISO: Coluna de valor unitario nao encontrada "
+                f"na aba {aba}. Gerando valores como 0."
+            )
+
+        df["CÃ³d"] = df[coluna_codigo]
+        df["Material"] = df[coluna_material]
+        df["Estoque"] = df[coluna_estoque]
+
         df = df[
             [
                 "Cód",
                 "Material",
-                "Estoque"
+                "Estoque",
+                *(
+                    [coluna_valor_unitario]
+                    if coluna_valor_unitario
+                    else []
+                )
             ]
         ]
 
@@ -221,6 +364,14 @@ def gerar_materiais_json():
 
             disponivel =                estoque > 0
 
+            valor_unitario =                preparar_valor_unitario(0)
+
+            if coluna_valor_unitario:
+
+                valor_unitario =                    preparar_valor_unitario(
+                        linha[coluna_valor_unitario]
+                    )
+
             chave =                f"{codigo}_{aba}"
 
             if chave not in materiais_dict:
@@ -233,7 +384,11 @@ def gerar_materiais_json():
 
                     "almoxarifado": aba,
 
-                    "disponivel": disponivel
+                    "disponivel": disponivel,
+
+                    "valorUnitario": valor_unitario["valorUnitario"],
+
+                    "valorUnitarioNumero": valor_unitario["valorUnitarioNumero"]
 
                 }
 
@@ -250,6 +405,18 @@ def gerar_materiais_json():
                 ):
 
                     material_existente["descricao"] =                        descricao
+
+                if (
+                    valor_unitario["valorUnitarioNumero"] > 0 and
+                    converter_valor_brasileiro(
+                        material_existente.get("valorUnitarioNumero") or
+                        material_existente.get("valorUnitario")
+                    ) <= 0
+                ):
+
+                    material_existente["valorUnitario"] =                        valor_unitario["valorUnitario"]
+
+                    material_existente["valorUnitarioNumero"] =                        valor_unitario["valorUnitarioNumero"]
 
     materiais =        list(
             materiais_dict.values()

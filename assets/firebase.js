@@ -131,6 +131,48 @@ function normalizarPerfil(perfil) {
 
 function tratarNumero(valor) {
 
+    if (typeof valor === "string") {
+
+        let texto =
+            valor
+                .trim()
+                .replace("R$", "")
+                .replace(/\s/g, "")
+
+        if (texto.includes(",") && texto.includes(".")) {
+
+            if (texto.lastIndexOf(",") > texto.lastIndexOf(".")) {
+
+                texto =
+                    texto
+                        .replace(/\./g, "")
+                        .replace(",", ".")
+
+            }
+
+            else {
+
+                texto =
+                    texto.replace(/,/g, "")
+
+            }
+
+        }
+
+        else if (texto.includes(",")) {
+
+            texto =
+                texto
+                    .replace(/\./g, "")
+                    .replace(",", ".")
+
+        }
+
+        valor =
+            texto
+
+    }
+
     const numero =
         Number(valor)
 
@@ -141,6 +183,23 @@ function tratarNumero(valor) {
     }
 
     return numero
+
+}
+
+function formatarMoedaFirebase(valor) {
+
+    const numero =
+        tratarNumero(valor)
+
+    return numero.toLocaleString(
+        "pt-BR",
+        {
+            style:
+                "currency",
+            currency:
+                "BRL"
+        }
+    )
 
 }
 
@@ -379,11 +438,20 @@ async function logoutFirebase() {
 async function buscarValorUnitarioMaterial(item) {
 
     const valorInformado =
-        tratarNumero(item?.valorUnitario)
+        tratarNumero(
+            item?.valorUnitarioNumero ||
+            item?.valorUnitario
+        )
 
     if (valorInformado > 0) {
 
-        return valorInformado
+        return {
+            valorUnitario:
+                item?.valorUnitario ||
+                formatarMoedaFirebase(valorInformado),
+            valorUnitarioNumero:
+                valorInformado
+        }
 
     }
 
@@ -397,7 +465,12 @@ async function buscarValorUnitarioMaterial(item) {
 
     if (!codigo || !almoxarifado) {
 
-        return 0
+        return {
+            valorUnitario:
+                formatarMoedaFirebase(0),
+            valorUnitarioNumero:
+                0
+        }
 
     }
 
@@ -414,16 +487,31 @@ async function buscarValorUnitarioMaterial(item) {
 
         if (!snapshotMaterial.exists()) {
 
-            return 0
+            return {
+                valorUnitario:
+                    formatarMoedaFirebase(0),
+                valorUnitarioNumero:
+                    0
+            }
 
         }
 
         const dadosMaterial =
             snapshotMaterial.data()
 
-        return tratarNumero(
-            dadosMaterial.valorUnitario
-        )
+        const valorUnitarioNumero =
+            tratarNumero(
+                dadosMaterial.valorUnitarioNumero ||
+                dadosMaterial.valorUnitario
+            )
+
+        return {
+            valorUnitario:
+                dadosMaterial.valorUnitario ||
+                formatarMoedaFirebase(valorUnitarioNumero),
+            valorUnitarioNumero:
+                valorUnitarioNumero
+        }
 
     }
 
@@ -434,7 +522,12 @@ async function buscarValorUnitarioMaterial(item) {
             erro
         )
 
-        return 0
+        return {
+            valorUnitario:
+                formatarMoedaFirebase(0),
+            valorUnitarioNumero:
+                0
+        }
 
     }
 
@@ -458,11 +551,11 @@ async function prepararItensSolicitacao(dadosSolicitacao) {
                 const quantidade =
                     tratarNumero(item.quantidade)
 
-                const valorUnitario =
+                const valorMaterial =
                     await buscarValorUnitarioMaterial(item)
 
-                const subtotal =
-                    quantidade * valorUnitario
+                const valorTotalItem =
+                    quantidade * valorMaterial.valorUnitarioNumero
 
                 return {
 
@@ -472,10 +565,16 @@ async function prepararItensSolicitacao(dadosSolicitacao) {
                         quantidade,
 
                     valorUnitario:
-                        valorUnitario,
+                        valorMaterial.valorUnitario,
+
+                    valorUnitarioNumero:
+                        valorMaterial.valorUnitarioNumero,
+
+                    valorTotalItem:
+                        valorTotalItem,
 
                     subtotal:
-                        subtotal
+                        valorTotalItem
 
                 }
 
@@ -504,7 +603,10 @@ async function salvarSolicitacaoFirebase(dadosSolicitacao) {
         itens.reduce(
             (total, item) => {
 
-                return total + tratarNumero(item.subtotal)
+                return total + tratarNumero(
+                    item.valorTotalItem ||
+                    item.subtotal
+                )
 
             },
             0
@@ -519,6 +621,9 @@ async function salvarSolicitacaoFirebase(dadosSolicitacao) {
                 itens,
 
             totalEstimado:
+                totalEstimado,
+
+            valorTotalEstimado:
                 totalEstimado,
 
             criadoEm:
@@ -609,6 +714,12 @@ function normalizarSolicitacaoFirebase(documento) {
                 dados.totalEstimado
             ),
 
+        valorTotalEstimado:
+            tratarNumero(
+                dados.valorTotalEstimado ||
+                dados.totalEstimado
+            ),
+
         usuarioUid:
             dados.usuarioUid || "",
 
@@ -684,7 +795,14 @@ function normalizarMaterialFirebase(documento) {
             Number(dados.estoque || 0),
 
         valorUnitario:
+            dados.valorUnitario ||
+            formatarMoedaFirebase(
+                dados.valorUnitarioNumero
+            ),
+
+        valorUnitarioNumero:
             tratarNumero(
+                dados.valorUnitarioNumero ||
                 dados.valorUnitario
             ),
 

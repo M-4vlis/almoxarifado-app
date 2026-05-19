@@ -2,6 +2,7 @@ import argparse
 import math
 import os
 import re
+import time
 import unicodedata
 from pathlib import Path
 
@@ -24,12 +25,15 @@ ABAS_MATERIAIS = [
 ]
 
 LIMITE_BATCH = 450
+LIMITE_BATCH_SOLICITACOES = 300
+PAUSA_ENTRE_LOTES_SOLICITACOES = 0.4
 
 firebase_admin = None
 auth = None
 credentials = None
 firestore = None
 FieldFilter = None
+ResourceExhausted = None
 
 
 # =========================
@@ -97,13 +101,14 @@ def normalizar_perfil(valor):
     return "usuario"
 
 
-def normalizar_valor_unitario(valor):
+def converter_valor_brasileiro(valor):
     if pd.isna(valor):
         return 0
 
     if isinstance(valor, str):
         texto = valor.strip()
         texto = texto.replace("R$", "")
+        texto = texto.replace("\xa0", "")
         texto = texto.replace(" ", "")
 
         if "," in texto and "." in texto:
@@ -128,6 +133,26 @@ def normalizar_valor_unitario(valor):
         return 0
 
     return numero
+
+
+def formatar_valor_unitario(valor):
+    numero = converter_valor_brasileiro(valor)
+
+    texto = f"R$ {numero:,.2f}"
+    texto = texto.replace(",", "X")
+    texto = texto.replace(".", ",")
+    texto = texto.replace("X", ".")
+
+    return texto
+
+
+def preparar_valor_unitario(valor):
+    numero = converter_valor_brasileiro(valor)
+
+    return {
+        "valorUnitario": formatar_valor_unitario(numero),
+        "valorUnitarioNumero": numero,
+    }
 
 
 def formatar_valor_excel_com_zeros(celula):
@@ -212,6 +237,7 @@ def carregar_firebase_admin():
     global credentials
     global firestore
     global FieldFilter
+    global ResourceExhausted
 
     if firebase_admin:
         return
@@ -222,6 +248,7 @@ def carregar_firebase_admin():
         from firebase_admin import credentials as credentials_modulo
         from firebase_admin import firestore as firestore_modulo
         from google.cloud.firestore_v1.base_query import FieldFilter as FieldFilterModulo
+        from google.api_core.exceptions import ResourceExhausted as ResourceExhaustedModulo
     except ModuleNotFoundError as erro:
         raise ModuleNotFoundError(
             "Dependencia firebase-admin nao instalada. Rode: pip install -r requirements.txt"
@@ -232,6 +259,7 @@ def carregar_firebase_admin():
     credentials = credentials_modulo
     firestore = firestore_modulo
     FieldFilter = FieldFilterModulo
+    ResourceExhausted = ResourceExhaustedModulo
 
 
 def inicializar_firebase(caminho_service_account):
@@ -314,6 +342,20 @@ def timestamp_servidor(dry_run):
     return firestore.SERVER_TIMESTAMP
 
 
+def erro_quota_firestore(erro):
+    if ResourceExhausted and isinstance(erro, ResourceExhausted):
+        return True
+
+    texto = str(erro).lower()
+
+    return (
+        "429" in texto or
+        "quota" in texto or
+        "resourceexhausted" in texto or
+        "resource exhausted" in texto
+    )
+
+
 # =========================
 # LER PLANILHAS
 # =========================
@@ -356,12 +398,23 @@ def ler_materiais():
         coluna_valor_unitario = obter_coluna(
             df.columns,
             [
+                "Valor Unitário",
+                "Valor unitário",
+                "VALOR UNITÁRIO",
                 "Valor Unitario",
+                "Valor",
+                "VALOR",
                 "Valor Unitário",
                 "Valor UnitÃ¡rio",
             ],
             obrigatoria=False,
         )
+
+        if not coluna_valor_unitario:
+            print(
+                "AVISO: Coluna de valor unitario nao encontrada "
+                f"na aba {aba}. Importando valores como 0."
+            )
 
         df = df[
             [
@@ -400,10 +453,10 @@ def ler_materiais():
             except (TypeError, ValueError):
                 estoque = 0
 
-            valor_unitario = 0
+            valor_unitario = preparar_valor_unitario(0)
 
             if coluna_valor_unitario:
-                valor_unitario = normalizar_valor_unitario(
+                valor_unitario = preparar_valor_unitario(
                     linha[coluna_valor_unitario]
                 )
 
@@ -417,7 +470,8 @@ def ler_materiais():
                 "almoxarifado": aba,
                 "estoque": estoque,
                 "disponivel": estoque > 0,
-                "valorUnitario": valor_unitario,
+                "valorUnitario": valor_unitario["valorUnitario"],
+                "valorUnitarioNumero": valor_unitario["valorUnitarioNumero"],
                 "ativo": True,
                 "origem": "planilha_materiais",
             }
@@ -436,10 +490,14 @@ def ler_materiais():
                 material_existente["descricao"] = descricao
 
             if (
-                valor_unitario > 0 and
-                float(material_existente.get("valorUnitario") or 0) <= 0
+                valor_unitario["valorUnitarioNumero"] > 0 and
+                converter_valor_brasileiro(
+                    material_existente.get("valorUnitarioNumero") or
+                    material_existente.get("valorUnitario")
+                ) <= 0
             ):
-                material_existente["valorUnitario"] = valor_unitario
+                material_existente["valorUnitario"] = valor_unitario["valorUnitario"]
+                material_existente["valorUnitarioNumero"] = valor_unitario["valorUnitarioNumero"]
 
     return materiais_dict
 
@@ -808,68 +866,157 @@ def importar_vinculos_requisicoes(db, dry_run):
     return mapa
 
 
+def solicitacao_precisa_atualizar(dados, requisicoes_ordenadas):
+    requisicoes_atuais = dados.get("requisicoesVinculadas") or []
+
+    if not isinstance(requisicoes_atuais, list):
+        requisicoes_atuais = [requisicoes_atuais]
+
+    requisicoes_atuais = [
+        limpar_numero(requisicao)
+        for requisicao in requisicoes_atuais
+        if limpar_numero(requisicao)
+    ]
+
+    return not (
+        limpar_numero(dados.get("numeroRequisicao")) == requisicoes_ordenadas[0] and
+        requisicoes_atuais == requisicoes_ordenadas and
+        dados.get("statusAtendimento") == "requisicao_vinculada" and
+        dados.get("status") == "requisicao_vinculada"
+    )
+
+
+def imprimir_resumo_atualizacao_solicitacoes(resumo):
+    print("\nResumo da atualizacao de solicitacoes")
+    print(f"GLPIs lidas: {resumo['glpis_lidas']}")
+    print(f"Vinculos importados: {resumo['vinculos_importados']}")
+    print(f"Solicitacoes encontradas: {resumo['solicitacoes_encontradas']}")
+    print(f"Solicitacoes atualizadas: {resumo['solicitacoes_atualizadas']}")
+    print(f"Solicitacoes sem correspondencia: {resumo['solicitacoes_sem_correspondencia']}")
+
+    if resumo["avisos_quota"]:
+        print(f"Avisos de quota: {resumo['avisos_quota']}")
+
+
 def atualizar_solicitacoes_com_requisicoes(db, mapa, dry_run):
+    resumo = {
+        "glpis_lidas": len(mapa),
+        "vinculos_importados": sum(len(requisicoes) for requisicoes in mapa.values()),
+        "solicitacoes_encontradas": 0,
+        "solicitacoes_atualizadas": 0,
+        "solicitacoes_sem_correspondencia": 0,
+        "avisos_quota": 0,
+    }
+
     if dry_run and db is None:
         print("Solicitacoes nao consultadas no dry-run sem Firebase.")
+        imprimir_resumo_atualizacao_solicitacoes(resumo)
         return
 
-    atualizadas = 0
-    sem_solicitacao = 0
+    batch = None
+    contador_batch = 0
+
+    if not dry_run:
+        batch = db.batch()
+
+    def commitar_lote_solicitacoes():
+        nonlocal batch
+        nonlocal contador_batch
+
+        if contador_batch == 0:
+            return
+
+        if dry_run:
+            resumo["solicitacoes_atualizadas"] += contador_batch
+            contador_batch = 0
+            return
+
+        try:
+            batch.commit()
+            resumo["solicitacoes_atualizadas"] += contador_batch
+            time.sleep(PAUSA_ENTRE_LOTES_SOLICITACOES)
+        except Exception as erro:
+            if erro_quota_firestore(erro):
+                print(
+                    "\nAVISO: quota do Firestore excedida durante a gravacao "
+                    "das solicitacoes. Aguarde alguns minutos e rode novamente, "
+                    "ou reduza o volume da importacao."
+                )
+                raise
+
+            raise
+
+        batch = db.batch()
+        contador_batch = 0
 
     for glpi, requisicoes in mapa.items():
         requisicoes_ordenadas = sorted(requisicoes)
-        snapshots = list(
-            db.collection("solicitacoes")
-            .where(
-                filter=FieldFilter(
-                    "glpi",
-                    "==",
-                    glpi,
+
+        try:
+            snapshots = db.collection("solicitacoes").where(
+                "glpi",
+                "==",
+                glpi,
+            ).stream()
+
+            encontradas_glpi = 0
+
+            for snapshot in snapshots:
+                encontradas_glpi += 1
+                resumo["solicitacoes_encontradas"] += 1
+
+                dados = snapshot.to_dict() or {}
+
+                if not solicitacao_precisa_atualizar(
+                    dados,
+                    requisicoes_ordenadas,
+                ):
+                    continue
+
+                if not dry_run:
+                    batch.set(
+                        snapshot.reference,
+                        {
+                            "numeroRequisicao": requisicoes_ordenadas[0],
+                            "requisicoesVinculadas": requisicoes_ordenadas,
+                            "statusAtendimento": "requisicao_vinculada",
+                            "status": "requisicao_vinculada",
+                            "atualizadoEm": timestamp_servidor(dry_run),
+                        },
+                        merge=True,
+                    )
+
+                contador_batch += 1
+
+                if contador_batch >= LIMITE_BATCH_SOLICITACOES:
+                    commitar_lote_solicitacoes()
+
+            if encontradas_glpi == 0:
+                resumo["solicitacoes_sem_correspondencia"] += 1
+
+            time.sleep(PAUSA_ENTRE_LOTES_SOLICITACOES)
+
+        except Exception as erro:
+            if erro_quota_firestore(erro):
+                resumo["avisos_quota"] += 1
+                print(
+                    "\nAVISO: quota do Firestore excedida ao consultar "
+                    f"solicitacoes da GLPI {glpi}. Aguarde alguns minutos "
+                    "e rode novamente, ou reduza o volume da importacao."
                 )
-            )
-            .stream()
-        )
+                break
 
-        if not snapshots:
-            sem_solicitacao += 1
-            continue
+            raise
 
-        batch = db.batch()
-        contador = 0
+    try:
+        commitar_lote_solicitacoes()
+    except Exception as erro:
+        if erro_quota_firestore(erro):
+            resumo["avisos_quota"] += 1
+        else:
+            raise
 
-        for snapshot in snapshots:
-            atualizadas += 1
-
-            if not dry_run:
-                batch.set(
-                    snapshot.reference,
-                    {
-                        "numeroRequisicao": requisicoes_ordenadas[0],
-                        "requisicoesVinculadas": requisicoes_ordenadas,
-                        "statusAtendimento": "requisicao_vinculada",
-                        "atualizadoEm": timestamp_servidor(dry_run),
-                    },
-                    merge=True,
-                )
-
-            contador += 1
-
-            if contador >= LIMITE_BATCH:
-                contador = commitar_batch(
-                    batch,
-                    contador,
-                    dry_run,
-                )
-                batch = db.batch()
-
-        commitar_batch(
-            batch,
-            contador,
-            dry_run,
-        )
-
-    print(f"Solicitacoes atualizadas com requisicao: {atualizadas}")
-    print(f"GLPIs sem solicitacao correspondente: {sem_solicitacao}")
+    imprimir_resumo_atualizacao_solicitacoes(resumo)
 
 
 # =========================
