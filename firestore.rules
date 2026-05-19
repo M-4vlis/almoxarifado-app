@@ -21,6 +21,16 @@ service cloud.firestore {
       return estaLogado() && request.auth.uid == uid;
     }
 
+    function ehDonoSolicitacao() {
+      return estaLogado()
+        && resource.data.usuarioUid == request.auth.uid;
+    }
+
+    function ehDonoNovaSolicitacao() {
+      return estaLogado()
+        && request.resource.data.usuarioUid == request.auth.uid;
+    }
+
     match /usuarios/{uid} {
       allow read: if ehDono(uid) || ehAdmin();
       allow create, update, delete: if ehAdmin();
@@ -32,11 +42,9 @@ service cloud.firestore {
     }
 
     match /solicitacoes/{solicitacaoId} {
-      allow create: if estaLogado()
-        && request.resource.data.usuarioUid == request.auth.uid;
+      allow create: if ehDonoNovaSolicitacao();
 
-      allow read: if ehAdmin()
-        || resource.data.usuarioUid == request.auth.uid;
+      allow read: if ehAdmin() || ehDonoSolicitacao();
 
       allow update, delete: if ehAdmin();
     }
@@ -49,6 +57,14 @@ service cloud.firestore {
     match /requisicoesPorGlpi/{glpiId} {
       allow read: if ehAdmin();
       allow create, update, delete: if ehAdmin();
+    }
+
+    match /configuracoes/{document=**} {
+      allow read, write: if ehAdmin();
+    }
+
+    match /importacoes/{document=**} {
+      allow read, write: if ehAdmin();
     }
   }
 }

@@ -1,6 +1,8 @@
 import argparse
+import math
 import os
 import re
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
@@ -53,6 +55,81 @@ def limpar_texto(valor):
     return str(valor).strip()
 
 
+def normalizar_cabecalho(valor):
+    texto = limpar_texto(valor).lower()
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = "".join(
+        caractere
+        for caractere in texto
+        if not unicodedata.combining(caractere)
+    )
+    texto = re.sub(r"\s+", " ", texto)
+
+    return texto.strip()
+
+
+def obter_coluna(colunas, nomes, obrigatoria=True):
+    mapa_colunas = {
+        normalizar_cabecalho(coluna): coluna
+        for coluna in colunas
+    }
+
+    for nome in nomes:
+        coluna = mapa_colunas.get(normalizar_cabecalho(nome))
+
+        if coluna is not None:
+            return coluna
+
+    if obrigatoria:
+        raise Exception(
+            f"Coluna obrigatoria nao encontrada: {nomes[0]}"
+        )
+
+    return None
+
+
+def normalizar_perfil(valor):
+    perfil = limpar_texto(valor).lower()
+
+    if perfil in ["admin", "usuario"]:
+        return perfil
+
+    return "usuario"
+
+
+def normalizar_valor_unitario(valor):
+    if pd.isna(valor):
+        return 0
+
+    if isinstance(valor, str):
+        texto = valor.strip()
+        texto = texto.replace("R$", "")
+        texto = texto.replace(" ", "")
+
+        if "," in texto and "." in texto:
+            if texto.rfind(",") > texto.rfind("."):
+                texto = texto.replace(".", "")
+                texto = texto.replace(",", ".")
+            else:
+                texto = texto.replace(",", "")
+
+        elif "," in texto:
+            texto = texto.replace(".", "")
+            texto = texto.replace(",", ".")
+
+        valor = texto
+
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        return 0
+
+    if not math.isfinite(numero):
+        return 0
+
+    return numero
+
+
 def formatar_valor_excel_com_zeros(celula):
     valor = celula.value
 
@@ -62,7 +139,7 @@ def formatar_valor_excel_com_zeros(celula):
     formato = str(celula.number_format)
 
     if isinstance(valor, str):
-        return re.sub(r"\D", "", valor.strip())
+        return valor.strip()
 
     if isinstance(valor, float) and valor.is_integer():
         valor = int(valor)
@@ -252,37 +329,83 @@ def ler_materiais():
             sheet_name=aba,
         )
 
+        coluna_codigo = obter_coluna(
+            df.columns,
+            [
+                "Cod",
+                "CÃ³d",
+                "Codigo",
+                "Código",
+            ],
+        )
+
+        coluna_material = obter_coluna(
+            df.columns,
+            [
+                "Material",
+            ],
+        )
+
+        coluna_estoque = obter_coluna(
+            df.columns,
+            [
+                "Estoque",
+            ],
+        )
+
+        coluna_valor_unitario = obter_coluna(
+            df.columns,
+            [
+                "Valor Unitario",
+                "Valor Unitário",
+                "Valor UnitÃ¡rio",
+            ],
+            obrigatoria=False,
+        )
+
         df = df[
             [
-                "Cód",
-                "Material",
-                "Estoque",
+                coluna_codigo,
+                coluna_material,
+                coluna_estoque,
+                *(
+                    [coluna_valor_unitario]
+                    if coluna_valor_unitario
+                    else []
+                ),
             ]
         ]
 
         df = df.dropna(
             subset=[
-                "Cód",
-                "Material",
+                coluna_codigo,
+                coluna_material,
             ]
         )
 
         for _, linha in df.iterrows():
-            codigo = limpar_numero(linha["Cód"])
-            descricao = limpar_texto(linha["Material"])
+            codigo = limpar_numero(linha[coluna_codigo])
+            descricao = limpar_texto(linha[coluna_material])
 
             if not codigo or not descricao:
                 continue
 
-            estoque = linha["Estoque"]
+            estoque = linha[coluna_estoque]
 
             if pd.isna(estoque):
                 estoque = 0
 
             try:
                 estoque = float(estoque)
-            except ValueError:
+            except (TypeError, ValueError):
                 estoque = 0
+
+            valor_unitario = 0
+
+            if coluna_valor_unitario:
+                valor_unitario = normalizar_valor_unitario(
+                    linha[coluna_valor_unitario]
+                )
 
             doc_id = f"{codigo}_{normalizar_id(aba)}"
 
@@ -294,6 +417,7 @@ def ler_materiais():
                 "almoxarifado": aba,
                 "estoque": estoque,
                 "disponivel": estoque > 0,
+                "valorUnitario": valor_unitario,
                 "ativo": True,
                 "origem": "planilha_materiais",
             }
@@ -310,6 +434,12 @@ def ler_materiais():
 
             if len(descricao) > len(material_existente.get("descricao") or ""):
                 material_existente["descricao"] = descricao
+
+            if (
+                valor_unitario > 0 and
+                float(material_existente.get("valorUnitario") or 0) <= 0
+            ):
+                material_existente["valorUnitario"] = valor_unitario
 
     return materiais_dict
 
@@ -334,17 +464,35 @@ def ler_colaboradores():
         if valor is not None:
             cabecalhos[str(valor).strip()] = coluna
 
-    colunas_necessarias = [
-        "NOME",
-        "MATRÍCULA",
-        "CPF",
-    ]
+    coluna_nome = obter_coluna(
+        cabecalhos.keys(),
+        [
+            "NOME",
+        ],
+    )
 
-    for coluna in colunas_necessarias:
-        if coluna not in cabecalhos:
-            raise Exception(
-                f"Coluna obrigatoria nao encontrada na planilha de colaboradores: {coluna}"
-            )
+    coluna_matricula = obter_coluna(
+        cabecalhos.keys(),
+        [
+            "MATRÍCULA",
+            "MATRICULA",
+        ],
+    )
+
+    coluna_cpf = obter_coluna(
+        cabecalhos.keys(),
+        [
+            "CPF",
+        ],
+    )
+
+    coluna_perfil = obter_coluna(
+        cabecalhos.keys(),
+        [
+            "PERFIL",
+        ],
+        obrigatoria=False,
+    )
 
     colaboradores = []
 
@@ -352,23 +500,33 @@ def ler_colaboradores():
         nome = limpar_texto(
             planilha.cell(
                 row=linha,
-                column=cabecalhos["NOME"],
+                column=cabecalhos[coluna_nome],
             ).value
         )
 
         matricula = formatar_valor_excel_com_zeros(
             planilha.cell(
                 row=linha,
-                column=cabecalhos["MATRÍCULA"],
+                column=cabecalhos[coluna_matricula],
             )
         )
 
         cpf = formatar_valor_excel_com_zeros(
             planilha.cell(
                 row=linha,
-                column=cabecalhos["CPF"],
+                column=cabecalhos[coluna_cpf],
             )
         )
+
+        perfil = "usuario"
+
+        if coluna_perfil:
+            perfil = normalizar_perfil(
+                planilha.cell(
+                    row=linha,
+                    column=cabecalhos[coluna_perfil],
+                ).value
+            )
 
         if not nome or not matricula or not cpf:
             continue
@@ -379,6 +537,7 @@ def ler_colaboradores():
                 "matricula": matricula,
                 "cpf": cpf,
                 "emailLogin": montar_email_login(matricula),
+                "perfil": perfil,
             }
         )
 
@@ -504,7 +663,7 @@ def importar_usuarios(db, dry_run, salvar_cpf, atualizar_senhas, matriculas_admi
 
     for colaborador in colaboradores:
         email = colaborador["emailLogin"]
-        senha = colaborador["cpf"]
+        senha = limpar_numero(colaborador["cpf"])
         usuario_auth = None
 
         if not dry_run:
@@ -551,7 +710,7 @@ def importar_usuarios(db, dry_run, salvar_cpf, atualizar_senhas, matriculas_admi
             if snapshot.exists:
                 documento_existente = snapshot.to_dict() or {}
 
-        perfil_padrao = documento_existente.get("perfil", "usuario")
+        perfil_padrao = colaborador.get("perfil", "usuario")
 
         if colaborador["matricula"] in matriculas_admin:
             perfil_padrao = "admin"

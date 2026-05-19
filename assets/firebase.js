@@ -102,6 +102,64 @@ function montarEmailLogin(matricula) {
 }
 
 // =========================
+// NORMALIZAR PERFIL
+// =========================
+
+function normalizarPerfil(perfil) {
+
+    const perfilTratado =
+        String(perfil || "")
+            .trim()
+            .toLowerCase()
+
+    if (
+        perfilTratado === "admin" ||
+        perfilTratado === "usuario"
+    ) {
+
+        return perfilTratado
+
+    }
+
+    return "usuario"
+
+}
+
+// =========================
+// TRATAR VALOR NUMERICO
+// =========================
+
+function tratarNumero(valor) {
+
+    const numero =
+        Number(valor)
+
+    if (!Number.isFinite(numero)) {
+
+        return 0
+
+    }
+
+    return numero
+
+}
+
+// =========================
+// NORMALIZAR ID DE MATERIAL
+// =========================
+
+function normalizarIdMaterial(valor) {
+
+    return String(valor || "")
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9_-]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "")
+
+}
+
+// =========================
 // BUSCAR USUÁRIO NO FIRESTORE
 // =========================
 
@@ -145,7 +203,9 @@ async function buscarUsuarioFirebase(uid) {
             dadosUsuario.emailLogin || "",
 
         perfil:
-            dadosUsuario.perfil || "usuario",
+            normalizarPerfil(
+                dadosUsuario.perfil
+            ),
 
         ativo:
             dadosUsuario.ativo !== false
@@ -313,6 +373,120 @@ async function logoutFirebase() {
 }
 
 // =========================
+// BUSCAR VALOR DO MATERIAL
+// =========================
+
+async function buscarValorUnitarioMaterial(item) {
+
+    const valorInformado =
+        tratarNumero(item?.valorUnitario)
+
+    if (valorInformado > 0) {
+
+        return valorInformado
+
+    }
+
+    const codigo =
+        String(item?.codigo || "")
+            .trim()
+
+    const almoxarifado =
+        String(item?.almoxarifado || "")
+            .trim()
+
+    if (!codigo || !almoxarifado) {
+
+        return 0
+
+    }
+
+    try {
+
+        const idMaterial =
+            `${codigo}_${normalizarIdMaterial(almoxarifado)}`
+
+        const referenciaMaterial =
+            doc(db, "materiais", idMaterial)
+
+        const snapshotMaterial =
+            await getDoc(referenciaMaterial)
+
+        if (!snapshotMaterial.exists()) {
+
+            return 0
+
+        }
+
+        const dadosMaterial =
+            snapshotMaterial.data()
+
+        return tratarNumero(
+            dadosMaterial.valorUnitario
+        )
+
+    }
+
+    catch (erro) {
+
+        console.warn(
+            "Nao foi possivel buscar valor unitario do material:",
+            erro
+        )
+
+        return 0
+
+    }
+
+}
+
+// =========================
+// PREPARAR ITENS DA SOLICITACAO
+// =========================
+
+async function prepararItensSolicitacao(dadosSolicitacao) {
+
+    const itensOriginais =
+        Array.isArray(dadosSolicitacao.itens)
+            ? dadosSolicitacao.itens
+            : []
+
+    const itens =
+        await Promise.all(
+            itensOriginais.map(async (item) => {
+
+                const quantidade =
+                    tratarNumero(item.quantidade)
+
+                const valorUnitario =
+                    await buscarValorUnitarioMaterial(item)
+
+                const subtotal =
+                    quantidade * valorUnitario
+
+                return {
+
+                    ...item,
+
+                    quantidade:
+                        quantidade,
+
+                    valorUnitario:
+                        valorUnitario,
+
+                    subtotal:
+                        subtotal
+
+                }
+
+            })
+        )
+
+    return itens
+
+}
+
+// =========================
 // SALVAR SOLICITAÇÃO
 // =========================
 
@@ -321,10 +495,31 @@ async function salvarSolicitacaoFirebase(dadosSolicitacao) {
     const referencia =
         collection(db, "solicitacoes")
 
+    const itens =
+        await prepararItensSolicitacao(
+            dadosSolicitacao
+        )
+
+    const totalEstimado =
+        itens.reduce(
+            (total, item) => {
+
+                return total + tratarNumero(item.subtotal)
+
+            },
+            0
+        )
+
     const documento =
         await addDoc(referencia, {
 
             ...dadosSolicitacao,
+
+            itens:
+                itens,
+
+            totalEstimado:
+                totalEstimado,
 
             criadoEm:
                 serverTimestamp(),
@@ -409,6 +604,11 @@ function normalizarSolicitacaoFirebase(documento) {
         totalItens:
             dados.totalItens || 0,
 
+        totalEstimado:
+            tratarNumero(
+                dados.totalEstimado
+            ),
+
         usuarioUid:
             dados.usuarioUid || "",
 
@@ -477,6 +677,11 @@ function normalizarMaterialFirebase(documento) {
 
         estoque:
             Number(dados.estoque || 0),
+
+        valorUnitario:
+            tratarNumero(
+                dados.valorUnitario
+            ),
 
         disponivel:
             dados.disponivel === true,
