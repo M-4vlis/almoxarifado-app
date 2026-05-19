@@ -196,91 +196,194 @@
 
                     </header>
 
-                    <section class="dashboard-grid">
+                    <section id="homeResumoDashboard" class="dashboard-grid">
 
-                        <div class="dashboard-card">
+                        <div class="empty-state">
 
-                            <div class="dashboard-card-icon">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
 
-                                <i class="fa-solid fa-clipboard-list"></i>
+                            <p>
+                                Carregando painel...
+                            </p>
+
+                        </div>
+
+                    </section>
+
+                    <section id="homeFiltrosAdmin" class="home-admin-filtros hidden">
+
+                        <div class="section-header-simple">
+
+                            <span>
+                                Filtros
+                            </span>
+
+                            <h2>
+                                Análise administrativa
+                            </h2>
+
+                        </div>
+
+                        <div class="home-filter-grid">
+
+                            <div class="form-group">
+
+                                <label for="homeFiltroDataInicio">
+                                    De
+                                </label>
+
+                                <input type="date" id="homeFiltroDataInicio">
 
                             </div>
 
-                            <div>
+                            <div class="form-group">
 
-                                <span>
-                                    Minhas solicitações
-                                </span>
+                                <label for="homeFiltroDataFim">
+                                    Até
+                                </label>
 
-                                <strong id="totalMinhasSolicitacoes">
-                                    —
-                                </strong>
+                                <input type="date" id="homeFiltroDataFim">
+
+                            </div>
+
+                            <div class="form-group">
+
+                                <label for="homeFiltroUsuario">
+                                    Usuário ou matrícula
+                                </label>
+
+                                <input type="text" id="homeFiltroUsuario" placeholder="Nome ou matrícula"
+                                    autocomplete="off">
+
+                            </div>
+
+                            <div class="form-group">
+
+                                <label for="homeFiltroGlpi">
+                                    GLPI
+                                </label>
+
+                                <input type="text" id="homeFiltroGlpi" placeholder="Número GLPI" inputmode="numeric"
+                                    autocomplete="off">
+
+                            </div>
+
+                            <div class="form-group">
+
+                                <label for="homeFiltroAlmoxarifado">
+                                    Almoxarifado
+                                </label>
+
+                                <select id="homeFiltroAlmoxarifado">
+
+                                    <option value="">
+                                        Todos
+                                    </option>
+
+                                    <option value="CENTRAL">
+                                        CENTRAL
+                                    </option>
+
+                                    <option value="SUB">
+                                        SUB
+                                    </option>
+
+                                    <option value="BENFICA">
+                                        BENFICA
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="form-group">
+
+                                <label for="homeFiltroMaterial">
+                                    Material
+                                </label>
+
+                                <input type="text" id="homeFiltroMaterial" placeholder="Código ou descrição"
+                                    autocomplete="off">
 
                             </div>
 
                         </div>
 
-                        <div class="dashboard-card">
+                    </section>
 
-                            <div class="dashboard-card-icon warning">
+                    <section id="homeAcoesUsuario" class="home-section">
 
-                                <i class="fa-solid fa-hourglass-half"></i>
+                        <div class="section-header-simple">
 
-                            </div>
+                            <span>
+                                Atalhos
+                            </span>
 
-                            <div>
-
-                                <span>
-                                    Aguardando requisição
-                                </span>
-
-                                <strong id="totalAguardandoRequisicao">
-                                    —
-                                </strong>
-
-                            </div>
+                            <h2>
+                                O que deseja fazer?
+                            </h2>
 
                         </div>
 
-                        <div class="dashboard-card">
+                        <div class="home-actions">
 
-                            <div class="dashboard-card-icon success">
+                            <button id="homeAtalhoBusca" type="button" class="home-action-card">
 
-                                <i class="fa-solid fa-circle-check"></i>
+                                <i class="fa-solid fa-magnifying-glass"></i>
 
-                            </div>
-
-                            <div>
-
-                                <span>
-                                    Requisições vinculadas
-                                </span>
-
-                                <strong id="totalRequisicoesVinculadas">
-                                    —
+                                <strong>
+                                    Buscar material
                                 </strong>
 
-                            </div>
+                                <span>
+                                    Consulte estoque e monte uma nova lista.
+                                </span>
+
+                            </button>
+
+                            <button id="homeAtalhoSolicitacoes" type="button" class="home-action-card">
+
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+
+                                <strong>
+                                    Ver solicitações
+                                </strong>
+
+                                <span>
+                                    Acompanhe histórico, GLPI e requisições.
+                                </span>
+
+                            </button>
 
                         </div>
 
-                        <div class="dashboard-card">
+                    </section>
 
-                            <div class="dashboard-card-icon">
+                    <section id="homeAdminRankings" class="home-section hidden"></section>
 
-                                <i class="fa-solid fa-boxes-stacked"></i>
+                    <section id="homeSolicitacoesRecentesSecao" class="home-section">
 
-                            </div>
+                        <div class="section-header-simple">
 
-                            <div>
+                            <span>
+                                Última atividade
+                            </span>
 
-                                <span>
-                                    Materiais solicitados
-                                </span>
+                            <h2>
+                                Solicitações recentes
+                            </h2>
 
-                                <strong id="totalMateriaisSolicitados">
-                                    —
-                                </strong>
+                        </div>
+
+                        <div id="homeSolicitacoesRecentes" class="home-recentes">
+
+                            <div class="empty-state">
+
+                                <i class="fa-solid fa-spinner fa-spin"></i>
+
+                                <p>
+                                    Carregando informações...
+                                </p>
 
                             </div>
 

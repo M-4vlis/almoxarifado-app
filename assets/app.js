@@ -776,6 +776,12 @@ function configurarEventosTelas() {
     const btnLimparFiltrosSolicitacoes =
         document.getElementById("btnLimparFiltrosSolicitacoes")
 
+    const homeAtalhoBusca =
+        document.getElementById("homeAtalhoBusca")
+
+    const homeAtalhoSolicitacoes =
+        document.getElementById("homeAtalhoSolicitacoes")
+
     if (atalhoNovaBusca) {
 
         atalhoNovaBusca.addEventListener(
@@ -851,6 +857,62 @@ function configurarEventosTelas() {
         )
 
     }
+
+    if (homeAtalhoBusca) {
+
+        homeAtalhoBusca.addEventListener(
+            "click",
+            async () => {
+
+                await mostrarTela("busca")
+
+            }
+        )
+
+    }
+
+    if (homeAtalhoSolicitacoes) {
+
+        homeAtalhoSolicitacoes.addEventListener(
+            "click",
+            async () => {
+
+                await mostrarTela("solicitacoes")
+
+            }
+        )
+
+    }
+
+    [
+        "homeFiltroDataInicio",
+        "homeFiltroDataFim",
+        "homeFiltroUsuario",
+        "homeFiltroGlpi",
+        "homeFiltroAlmoxarifado",
+        "homeFiltroMaterial"
+    ].forEach(idFiltro => {
+
+        const campo =
+            document.getElementById(idFiltro)
+
+        if (!campo) {
+
+            return
+
+        }
+
+        const evento =
+            campo.tagName === "SELECT"
+                ? "change"
+                : "input"
+
+        campo.addEventListener(
+            evento,
+            atualizarDashboardInicio
+        )
+
+    })
 
     if (btnAtualizarSolicitacoes) {
 
@@ -965,13 +1027,18 @@ function atualizarDashboardInicio() {
     const usuario =
         obterSessaoUsuario()
 
+    const admin =
+        usuarioEhAdmin()
+
     const boasVindas =
         document.getElementById("homeBoasVindas")
 
     if (boasVindas) {
 
         boasVindas.innerText =
-            `Bem-vindo, ${usuario?.nome || "usuário"}`
+            admin
+                ? `Painel admin, ${usuario?.nome || "usuário"}`
+                : `Bem-vindo, ${usuario?.nome || "usuário"}`
 
     }
 
@@ -981,35 +1048,118 @@ function atualizarDashboardInicio() {
     if (saudacao) {
 
         saudacao.innerText =
-            usuarioEhAdmin()
-                ? "Painel geral das solicitações enviadas pelos usuários."
+            admin
+                ? "Resumo geral das solicitações, custos estimados e principais movimentações."
                 : `Olá, ${usuario?.nome || "usuário"}. Acompanhe suas solicitações por aqui.`
 
     }
 
+    alternarBlocosInicio(admin)
+
+    const listaDashboard =
+        admin
+            ? obterSolicitacoesDashboardAdmin()
+            : [...solicitacoesCarregadas]
+
+    renderizarResumoDashboard(
+        listaDashboard,
+        admin
+    )
+
+    if (admin) {
+
+        renderizarRankingsAdmin(listaDashboard)
+
+    }
+
+    else {
+
+        renderizarSolicitacoesRecentes(listaDashboard)
+
+    }
+
+}
+
+function alternarBlocosInicio(admin) {
+
+    const filtrosAdmin =
+        document.getElementById("homeFiltrosAdmin")
+
+    const rankingsAdmin =
+        document.getElementById("homeAdminRankings")
+
+    const acoesUsuario =
+        document.getElementById("homeAcoesUsuario")
+
+    const recentesUsuario =
+        document.getElementById("homeSolicitacoesRecentesSecao")
+
+    if (filtrosAdmin) {
+
+        filtrosAdmin.classList.toggle(
+            "hidden",
+            !admin
+        )
+
+    }
+
+    if (rankingsAdmin) {
+
+        rankingsAdmin.classList.toggle(
+            "hidden",
+            !admin
+        )
+
+    }
+
+    if (acoesUsuario) {
+
+        acoesUsuario.classList.toggle(
+            "hidden",
+            admin
+        )
+
+    }
+
+    if (recentesUsuario) {
+
+        recentesUsuario.classList.toggle(
+            "hidden",
+            admin
+        )
+
+    }
+
+}
+
+function solicitacaoEstaVinculada(solicitacao) {
+
+    return (
+        solicitacao.statusAtendimento === "requisicao_vinculada" ||
+        solicitacao.statusAtendimento === "concluida" ||
+        Boolean(solicitacao.numeroRequisicao) ||
+        Number(solicitacao.requisicoesVinculadas?.length || 0) > 0
+    )
+
+}
+
+function obterResumoDashboard(lista) {
+
     const totalSolicitacoes =
-        solicitacoesCarregadas.length
+        lista.length
 
     const aguardando =
-        solicitacoesCarregadas.filter(item => {
+        lista.filter(item => {
 
             return item.statusAtendimento === "aguardando_requisicao"
 
         }).length
 
     const vinculadas =
-        solicitacoesCarregadas.filter(item => {
-
-            return (
-                item.statusAtendimento === "requisicao_vinculada" ||
-                item.numeroRequisicao ||
-                Number(item.requisicoesVinculadas?.length || 0) > 0
-            )
-
-        }).length
+        lista.filter(solicitacaoEstaVinculada).length
 
     const totalItens =
-        solicitacoesCarregadas.reduce(
+        lista.reduce(
             (total, solicitacao) => {
 
                 return total + Number(solicitacao.totalItens || 0)
@@ -1018,51 +1168,613 @@ function atualizarDashboardInicio() {
             0
         )
 
-    const campos = {
+    const totalEstimado =
+        lista.reduce(
+            (total, solicitacao) => {
 
-        totalMinhasSolicitacoes:
-            totalSolicitacoes,
+                return total + obterTotalEstimadoSolicitacao(solicitacao)
 
-        totalAguardandoRequisicao:
-            aguardando,
+            },
+            0
+        )
 
-        totalRequisicoesVinculadas:
-            vinculadas,
+    const usuariosSolicitantes =
+        new Set()
 
-        totalMateriaisSolicitados:
-            totalItens,
+    lista.forEach(solicitacao => {
 
-        homeTotalSolicitacoes:
-            totalSolicitacoes,
+        const chave =
+            solicitacao.usuarioUid ||
+            solicitacao.usuarioMatricula ||
+            solicitacao.usuarioSolicitante?.matricula ||
+            solicitacao.usuarioNome
 
-        homeAguardando:
-            aguardando,
+        if (chave) {
 
-        homeVinculadas:
-            vinculadas,
-
-        homeTotalItens:
-            totalItens
-
-    }
-
-    Object.entries(campos).forEach(([id, valor]) => {
-
-        const elemento =
-            document.getElementById(id)
-
-        if (elemento) {
-
-            elemento.innerText =
-                valor
+            usuariosSolicitantes.add(chave)
 
         }
 
     })
 
+    return {
+        totalSolicitacoes,
+        aguardando,
+        vinculadas,
+        totalItens,
+        totalEstimado,
+        totalUsuarios:
+            usuariosSolicitantes.size
+    }
+
 }
 
-function renderizarSolicitacoesRecentes() {
+function criarCardResumoDashboard(opcao) {
+
+    const classeIcone =
+        opcao.classeIcone
+            ? ` ${opcao.classeIcone}`
+            : ""
+
+    return `
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon${classeIcone}">
+                <i class="${opcao.icone}"></i>
+            </div>
+
+            <div>
+                <span>${escaparHtml(opcao.rotulo)}</span>
+                <strong>${escaparHtml(opcao.valor)}</strong>
+            </div>
+        </div>
+    `
+
+}
+
+function renderizarResumoDashboard(lista, admin) {
+
+    const container =
+        document.getElementById("homeResumoDashboard")
+
+    if (!container) {
+
+        return
+
+    }
+
+    const resumo =
+        obterResumoDashboard(lista)
+
+    const cards = [
+        {
+            rotulo:
+                admin ? "Solicitações" : "Minhas solicitações",
+            valor:
+                resumo.totalSolicitacoes,
+            icone:
+                "fa-solid fa-clipboard-list"
+        },
+        {
+            rotulo:
+                "Aguardando requisição",
+            valor:
+                resumo.aguardando,
+            icone:
+                "fa-solid fa-hourglass-half",
+            classeIcone:
+                "warning"
+        },
+        {
+            rotulo:
+                "Vinculadas/concluídas",
+            valor:
+                resumo.vinculadas,
+            icone:
+                "fa-solid fa-circle-check",
+            classeIcone:
+                "success"
+        },
+        {
+            rotulo:
+                "Total estimado",
+            valor:
+                formatarMoeda(resumo.totalEstimado) || "R$ 0,00",
+            icone:
+                "fa-solid fa-coins"
+        }
+    ]
+
+    if (admin) {
+
+        cards.push(
+            {
+                rotulo:
+                    "Usuários solicitantes",
+                valor:
+                    resumo.totalUsuarios,
+                icone:
+                    "fa-solid fa-users"
+            },
+            {
+                rotulo:
+                    "Materiais solicitados",
+                valor:
+                    resumo.totalItens,
+                icone:
+                    "fa-solid fa-boxes-stacked"
+            }
+        )
+
+    }
+
+    container.innerHTML =
+        cards
+            .map(criarCardResumoDashboard)
+            .join("")
+
+}
+
+function obterFiltrosDashboardAdmin() {
+
+    return {
+
+        dataInicio:
+            document
+                .getElementById("homeFiltroDataInicio")
+                ?.value || "",
+
+        dataFim:
+            document
+                .getElementById("homeFiltroDataFim")
+                ?.value || "",
+
+        usuario:
+            document
+                .getElementById("homeFiltroUsuario")
+                ?.value
+                ?.trim() || "",
+
+        glpi:
+            document
+                .getElementById("homeFiltroGlpi")
+                ?.value
+                ?.trim() || "",
+
+        almoxarifado:
+            document
+                .getElementById("homeFiltroAlmoxarifado")
+                ?.value || "",
+
+        material:
+            document
+                .getElementById("homeFiltroMaterial")
+                ?.value
+                ?.trim() || ""
+
+    }
+
+}
+
+function obterSolicitacoesDashboardAdmin() {
+
+    const filtros =
+        obterFiltrosDashboardAdmin()
+
+    let lista =
+        [...solicitacoesCarregadas]
+
+    if (filtros.dataInicio || filtros.dataFim) {
+
+        lista =
+            lista.filter(solicitacao => {
+
+                const dataItem =
+                    obterDataInputSolicitacao(solicitacao)
+
+                if (!dataItem) {
+
+                    return false
+
+                }
+
+                return (
+                    (!filtros.dataInicio || dataItem >= filtros.dataInicio) &&
+                    (!filtros.dataFim || dataItem <= filtros.dataFim)
+                )
+
+            })
+
+    }
+
+    if (filtros.usuario) {
+
+        lista =
+            lista.filter(solicitacao => {
+
+                return textoContem(
+                    [
+                        solicitacao.usuarioNome,
+                        solicitacao.usuarioMatricula,
+                        solicitacao.usuarioSolicitante?.nome,
+                        solicitacao.usuarioSolicitante?.matricula
+                    ].join(" "),
+                    filtros.usuario
+                )
+
+            })
+
+    }
+
+    if (filtros.glpi) {
+
+        lista =
+            lista.filter(solicitacao => {
+
+                return textoContem(
+                    solicitacao.glpi,
+                    filtros.glpi
+                )
+
+            })
+
+    }
+
+    if (filtros.almoxarifado) {
+
+        lista =
+            lista.filter(solicitacao => {
+
+                return (solicitacao.itens || [])
+                    .some(item => {
+
+                        return item.almoxarifado === filtros.almoxarifado
+
+                    })
+
+            })
+
+    }
+
+    if (filtros.material) {
+
+        lista =
+            lista.filter(solicitacao => {
+
+                return (solicitacao.itens || [])
+                    .some(item => {
+
+                        return textoContem(
+                            `${item.codigo || ""} ${item.descricao || ""}`,
+                            filtros.material
+                        )
+
+                    })
+
+            })
+
+    }
+
+    return lista
+
+}
+
+function obterNomeUsuarioSolicitacao(solicitacao) {
+
+    return (
+        solicitacao.usuarioNome ||
+        solicitacao.usuarioSolicitante?.nome ||
+        "Não informado"
+    )
+
+}
+
+function obterMatriculaUsuarioSolicitacao(solicitacao) {
+
+    return (
+        solicitacao.usuarioMatricula ||
+        solicitacao.usuarioSolicitante?.matricula ||
+        ""
+    )
+
+}
+
+function somarRanking(mapa, chave, incremento, detalhe = "") {
+
+    const chaveFinal =
+        String(chave || "").trim() || "Não informado"
+
+    if (!mapa.has(chaveFinal)) {
+
+        mapa.set(
+            chaveFinal,
+            {
+                label:
+                    chaveFinal,
+                detalhe:
+                    detalhe,
+                quantidade:
+                    0,
+                total:
+                    0
+            }
+        )
+
+    }
+
+    const item =
+        mapa.get(chaveFinal)
+
+    item.quantidade +=
+        Number(incremento.quantidade || 0)
+
+    item.total +=
+        Number(incremento.total || 0)
+
+    if (detalhe && !item.detalhe) {
+
+        item.detalhe =
+            detalhe
+
+    }
+
+}
+
+function obterTopRanking(mapa, campo = "total", limite = 5) {
+
+    return Array.from(mapa.values())
+        .sort((a, b) => {
+
+            return Number(b[campo] || 0) - Number(a[campo] || 0)
+
+        })
+        .slice(0, limite)
+
+}
+
+function renderizarListaRanking(titulo, icone, itens, tipoValor = "moeda") {
+
+    const linhas =
+        itens.length > 0
+            ? itens
+                .map((item, indice) => {
+
+                    const valor =
+                        tipoValor === "quantidade"
+                            ? `${item.quantidade || 0}`
+                            : formatarMoeda(item.total) || "R$ 0,00"
+
+                    return `
+                        <li>
+                            <div>
+                                <span>${indice + 1}. ${escaparHtml(item.label)}</span>
+                                <small>${escaparHtml(item.detalhe || "")}</small>
+                            </div>
+
+                            <strong>${escaparHtml(valor)}</strong>
+                        </li>
+                    `
+
+                })
+                .join("")
+            : `
+                <li class="ranking-empty">
+                    Nenhum dado disponível.
+                </li>
+            `
+
+    return `
+        <div class="ranking-card">
+            <div class="ranking-card-header">
+                <i class="${icone}"></i>
+                <h3>${escaparHtml(titulo)}</h3>
+            </div>
+
+            <ul>
+                ${linhas}
+            </ul>
+        </div>
+    `
+
+}
+
+function renderizarRankingsAdmin(lista) {
+
+    const container =
+        document.getElementById("homeAdminRankings")
+
+    if (!container) {
+
+        return
+
+    }
+
+    const porUsuarioQuantidade =
+        new Map()
+
+    const porUsuarioValor =
+        new Map()
+
+    const porGlpiValor =
+        new Map()
+
+    const porRequisicaoValor =
+        new Map()
+
+    const porMaterial =
+        new Map()
+
+    const porAlmoxarifado =
+        new Map()
+
+    lista.forEach(solicitacao => {
+
+        const total =
+            obterTotalEstimadoSolicitacao(solicitacao)
+
+        const nomeUsuario =
+            obterNomeUsuarioSolicitacao(solicitacao)
+
+        const matriculaUsuario =
+            obterMatriculaUsuarioSolicitacao(solicitacao)
+
+        somarRanking(
+            porUsuarioQuantidade,
+            `${nomeUsuario}${matriculaUsuario ? ` (${matriculaUsuario})` : ""}`,
+            {
+                quantidade:
+                    1,
+                total:
+                    total
+            }
+        )
+
+        somarRanking(
+            porUsuarioValor,
+            `${nomeUsuario}${matriculaUsuario ? ` (${matriculaUsuario})` : ""}`,
+            {
+                quantidade:
+                    1,
+                total:
+                    total
+            }
+        )
+
+        somarRanking(
+            porGlpiValor,
+            solicitacao.glpi || "Sem GLPI",
+            {
+                quantidade:
+                    1,
+                total:
+                    total
+            },
+            `${solicitacao.totalItens || 0} item(ns)`
+        )
+
+        const requisicoes =
+            [
+                solicitacao.numeroRequisicao,
+                ...(solicitacao.requisicoesVinculadas || [])
+            ]
+                .filter(Boolean)
+                .filter((valor, indice, listaValores) => {
+
+                    return listaValores.indexOf(valor) === indice
+
+                })
+
+        requisicoes.forEach(requisicao => {
+
+            somarRanking(
+                porRequisicaoValor,
+                requisicao,
+                {
+                    quantidade:
+                        1,
+                    total:
+                        total
+                },
+                `GLPI ${solicitacao.glpi || "-"}`
+            )
+
+        })
+
+        const itensSolicitacao =
+            solicitacao.itens || []
+
+        itensSolicitacao.forEach(item => {
+
+            const quantidade =
+                Number(item.quantidade || 0)
+
+            const subtotal =
+                Number(item.subtotal || 0)
+
+            somarRanking(
+                porMaterial,
+                `${item.codigo || "-"} - ${item.descricao || "Material"}`,
+                {
+                    quantidade:
+                        quantidade,
+                    total:
+                        Number.isFinite(subtotal)
+                            ? subtotal
+                            : 0
+                },
+                item.almoxarifado || ""
+            )
+
+            somarRanking(
+                porAlmoxarifado,
+                item.almoxarifado || "Não informado",
+                {
+                    quantidade:
+                        quantidade,
+                    total:
+                        Number.isFinite(subtotal)
+                            ? subtotal
+                            : 0
+                }
+            )
+
+        })
+
+    })
+
+    container.innerHTML = `
+        <div class="section-header-simple">
+            <span>Rankings</span>
+            <h2>Principais indicadores</h2>
+        </div>
+
+        <div class="ranking-grid">
+            ${renderizarListaRanking(
+                "Usuários por solicitações",
+                "fa-solid fa-users",
+                obterTopRanking(porUsuarioQuantidade, "quantidade"),
+                "quantidade"
+            )}
+
+            ${renderizarListaRanking(
+                "Usuários por valor",
+                "fa-solid fa-coins",
+                obterTopRanking(porUsuarioValor, "total"),
+                "moeda"
+            )}
+
+            ${renderizarListaRanking(
+                "GLPIs por valor",
+                "fa-solid fa-ticket",
+                obterTopRanking(porGlpiValor, "total"),
+                "moeda"
+            )}
+
+            ${renderizarListaRanking(
+                "Requisições por valor",
+                "fa-solid fa-file-invoice",
+                obterTopRanking(porRequisicaoValor, "total"),
+                "moeda"
+            )}
+
+            ${renderizarListaRanking(
+                "Materiais solicitados",
+                "fa-solid fa-box",
+                obterTopRanking(porMaterial, "quantidade"),
+                "quantidade"
+            )}
+
+            ${renderizarListaRanking(
+                "Distribuição por almoxarifado",
+                "fa-solid fa-warehouse",
+                obterTopRanking(porAlmoxarifado, "quantidade"),
+                "quantidade"
+            )}
+        </div>
+    `
+
+}
+
+function renderizarSolicitacoesRecentes(lista = solicitacoesCarregadas) {
 
     const container =
         document.getElementById("homeSolicitacoesRecentes")
@@ -1075,7 +1787,7 @@ function renderizarSolicitacoesRecentes() {
 
     container.innerHTML = ""
 
-    if (solicitacoesCarregadas.length === 0) {
+    if (lista.length === 0) {
 
         container.innerHTML = `
             <div class="empty-state">
@@ -1091,7 +1803,7 @@ function renderizarSolicitacoesRecentes() {
 
     }
 
-    solicitacoesCarregadas
+    lista
         .slice(0, 3)
         .forEach(solicitacao => {
 
@@ -2762,28 +3474,9 @@ function obterTotalEstimadoSolicitacao(solicitacao) {
                 const subtotal =
                     Number(item.subtotal || 0)
 
-                if (Number.isFinite(subtotal) && subtotal > 0) {
-
-                    return total + subtotal
-
-                }
-
-                const quantidade =
-                    Number(item.quantidade || 0)
-
-                const valorUnitario =
-                    Number(item.valorUnitario || 0)
-
-                if (
-                    Number.isFinite(quantidade) &&
-                    Number.isFinite(valorUnitario)
-                ) {
-
-                    return total + (quantidade * valorUnitario)
-
-                }
-
-                return total
+                return Number.isFinite(subtotal)
+                    ? total + subtotal
+                    : total
 
             },
             0
