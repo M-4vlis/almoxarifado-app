@@ -767,20 +767,14 @@ function configurarEventosTelas() {
     const btnSairPerfil =
         document.getElementById("btnSairPerfil")
 
-    const filtroMes =
-        document.getElementById("filtroMes")
-
-    const filtroAno =
-        document.getElementById("filtroAno")
-
-    const filtroStatus =
-        document.getElementById("filtroStatus")
-
     const btnAtualizarSolicitacoes =
         document.getElementById("btnAtualizarSolicitacoes")
 
     const btnGerarRelatorio =
         document.getElementById("btnGerarRelatorio")
+
+    const btnLimparFiltrosSolicitacoes =
+        document.getElementById("btnLimparFiltrosSolicitacoes")
 
     if (atalhoNovaBusca) {
 
@@ -817,29 +811,47 @@ function configurarEventosTelas() {
 
     }
 
-    if (filtroMes) {
+    [
+        "filtroDataInicio",
+        "filtroDataFim",
+        "filtroStatus",
+        "filtroGlpi",
+        "filtroRequisicao",
+        "filtroMaterial",
+        "filtroAlmoxarifado",
+        "filtroValorMinimo",
+        "filtroValorMaximo",
+        "filtroUsuarioNome",
+        "filtroUsuarioMatricula",
+        "filtroUsuarioPerfil"
+    ].forEach(idFiltro => {
 
-        filtroMes.addEventListener(
-            "change",
+        const campo =
+            document.getElementById(idFiltro)
+
+        if (!campo) {
+
+            return
+
+        }
+
+        const evento =
+            campo.tagName === "SELECT"
+                ? "change"
+                : "input"
+
+        campo.addEventListener(
+            evento,
             renderizarSolicitacoes
         )
 
-    }
+    })
 
-    if (filtroAno) {
+    if (btnLimparFiltrosSolicitacoes) {
 
-        filtroAno.addEventListener(
-            "input",
-            renderizarSolicitacoes
-        )
-
-    }
-
-    if (filtroStatus) {
-
-        filtroStatus.addEventListener(
-            "change",
-            renderizarSolicitacoes
+        btnLimparFiltrosSolicitacoes.addEventListener(
+            "click",
+            limparFiltrosSolicitacoes
         )
 
     }
@@ -2517,6 +2529,57 @@ function obterDataSolicitacao(solicitacao) {
 
 }
 
+function atualizarFiltrosAdminSolicitacoes() {
+
+    const admin =
+        usuarioEhAdmin()
+
+    document
+        .querySelectorAll(".filtro-admin-solicitacoes")
+        .forEach(elemento => {
+
+            elemento.classList.toggle(
+                "hidden",
+                !admin
+            )
+
+        })
+
+    if (!admin) {
+
+        [
+            "filtroUsuarioNome",
+            "filtroUsuarioMatricula",
+            "filtroUsuarioPerfil"
+        ].forEach(idFiltro => {
+
+            const campo =
+                document.getElementById(idFiltro)
+
+            if (campo) {
+
+                campo.value = ""
+
+            }
+
+        })
+
+    }
+
+    const titulo =
+        document.querySelector("#secaoMinhasSolicitacoes .historico-header h2")
+
+    if (titulo) {
+
+        titulo.innerText =
+            admin
+                ? "Solicitações"
+                : "Minhas solicitações"
+
+    }
+
+}
+
 async function carregarSolicitacoesUsuario(renderizarTela) {
 
     const usuario =
@@ -2527,6 +2590,8 @@ async function carregarSolicitacoesUsuario(renderizarTela) {
         return
 
     }
+
+    atualizarFiltrosAdminSolicitacoes()
 
     if (renderizarTela) {
 
@@ -2605,7 +2670,13 @@ function obterTextoStatusAtendimento(status) {
             "Requisição vinculada",
 
         enviada_whatsapp:
-            "Enviada pelo WhatsApp"
+            "Enviada pelo WhatsApp",
+
+        concluida:
+            "Concluída",
+
+        cancelada:
+            "Cancelada"
 
     }
 
@@ -2625,24 +2696,268 @@ function obterTextoRequisicao(solicitacao) {
 
 }
 
+function normalizarBusca(texto) {
+
+    return String(texto || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+
+}
+
+function textoContem(valor, filtro) {
+
+    const filtroNormalizado =
+        normalizarBusca(filtro)
+
+    if (!filtroNormalizado) {
+
+        return true
+
+    }
+
+    return normalizarBusca(valor)
+        .includes(filtroNormalizado)
+
+}
+
+function obterDataInputSolicitacao(solicitacao) {
+
+    const data =
+        obterDataSolicitacao(solicitacao)
+
+    if (!data) {
+
+        return ""
+
+    }
+
+    const ano =
+        data.getFullYear()
+
+    const mes =
+        String(data.getMonth() + 1)
+            .padStart(2, "0")
+
+    const dia =
+        String(data.getDate())
+            .padStart(2, "0")
+
+    return `${ano}-${mes}-${dia}`
+
+}
+
+function tratarValorFiltro(valor) {
+
+    if (valor === "" || valor === null || valor === undefined) {
+
+        return null
+
+    }
+
+    const numero =
+        Number(
+            String(valor)
+                .replace(",", ".")
+        )
+
+    if (!Number.isFinite(numero)) {
+
+        return null
+
+    }
+
+    return numero
+
+}
+
+function obterTotalEstimadoSolicitacao(solicitacao) {
+
+    const totalEstimado =
+        Number(solicitacao.totalEstimado || 0)
+
+    if (Number.isFinite(totalEstimado) && totalEstimado > 0) {
+
+        return totalEstimado
+
+    }
+
+    return (solicitacao.itens || [])
+        .reduce(
+            (total, item) => {
+
+                const subtotal =
+                    Number(item.subtotal || 0)
+
+                if (Number.isFinite(subtotal) && subtotal > 0) {
+
+                    return total + subtotal
+
+                }
+
+                const quantidade =
+                    Number(item.quantidade || 0)
+
+                const valorUnitario =
+                    Number(item.valorUnitario || 0)
+
+                if (
+                    Number.isFinite(quantidade) &&
+                    Number.isFinite(valorUnitario)
+                ) {
+
+                    return total + (quantidade * valorUnitario)
+
+                }
+
+                return total
+
+            },
+            0
+        )
+
+}
+
+function formatarMoeda(valor) {
+
+    const numero =
+        Number(valor || 0)
+
+    if (!Number.isFinite(numero) || numero <= 0) {
+
+        return ""
+
+    }
+
+    return numero.toLocaleString(
+        "pt-BR",
+        {
+            style:
+                "currency",
+            currency:
+                "BRL"
+        }
+    )
+
+}
+
+function obterResumoItens(solicitacao) {
+
+    const itens =
+        solicitacao.itens || []
+
+    if (itens.length === 0) {
+
+        return "Sem itens detalhados"
+
+    }
+
+    const primeiroItem =
+        itens[0]
+
+    const restante =
+        itens.length - 1
+
+    const textoPrimeiro =
+        `${primeiroItem.quantidade || 0}x ${primeiroItem.descricao || "Material"}`
+
+    if (restante <= 0) {
+
+        return textoPrimeiro
+
+    }
+
+    return `${textoPrimeiro} + ${restante} item(ns)`
+
+}
+
+function obterTextoRequisicoesVinculadas(solicitacao) {
+
+    const requisicoes =
+        solicitacao.requisicoesVinculadas || []
+
+    if (requisicoes.length === 0) {
+
+        return ""
+
+    }
+
+    return requisicoes.join(", ")
+
+}
+
 function obterFiltrosSolicitacoes() {
 
     return {
 
-        mes:
+        dataInicio:
             document
-                .getElementById("filtroMes")
+                .getElementById("filtroDataInicio")
                 ?.value || "",
 
-        ano:
+        dataFim:
             document
-                .getElementById("filtroAno")
-                ?.value
-                ?.trim() || "",
+                .getElementById("filtroDataFim")
+                ?.value || "",
 
         status:
             document
                 .getElementById("filtroStatus")
+                ?.value || "",
+
+        glpi:
+            document
+                .getElementById("filtroGlpi")
+                ?.value
+                ?.trim() || "",
+
+        requisicao:
+            document
+                .getElementById("filtroRequisicao")
+                ?.value
+                ?.trim() || "",
+
+        material:
+            document
+                .getElementById("filtroMaterial")
+                ?.value
+                ?.trim() || "",
+
+        almoxarifado:
+            document
+                .getElementById("filtroAlmoxarifado")
+                ?.value || "",
+
+        valorMinimo:
+            tratarValorFiltro(
+                document
+                    .getElementById("filtroValorMinimo")
+                    ?.value
+            ),
+
+        valorMaximo:
+            tratarValorFiltro(
+                document
+                    .getElementById("filtroValorMaximo")
+                    ?.value
+            ),
+
+        usuarioNome:
+            document
+                .getElementById("filtroUsuarioNome")
+                ?.value
+                ?.trim() || "",
+
+        usuarioMatricula:
+            document
+                .getElementById("filtroUsuarioMatricula")
+                ?.value
+                ?.trim() || "",
+
+        usuarioPerfil:
+            document
+                .getElementById("filtroUsuarioPerfil")
                 ?.value || ""
 
     }
@@ -2657,6 +2972,9 @@ function obterSolicitacoesFiltradas() {
     let lista =
         [...solicitacoesCarregadas]
 
+    const usuarioAdmin =
+        usuarioEhAdmin()
+
     if (filtros.status) {
 
         lista =
@@ -2668,36 +2986,191 @@ function obterSolicitacoesFiltradas() {
 
     }
 
-    if (filtros.mes || filtros.ano) {
+    if (filtros.dataInicio || filtros.dataFim) {
 
         lista =
             lista.filter(item => {
 
-                const data =
-                    obterDataSolicitacao(item)
+                const dataItem =
+                    obterDataInputSolicitacao(item)
 
-                if (!data) {
+                if (!dataItem) {
 
                     return false
 
                 }
 
-                const mes =
-                    String(data.getMonth() + 1).padStart(2, "0")
-
-                const ano =
-                    String(data.getFullYear())
-
                 return (
-                    (!filtros.mes || mes === filtros.mes) &&
-                    (!filtros.ano || ano === filtros.ano)
+                    (!filtros.dataInicio || dataItem >= filtros.dataInicio) &&
+                    (!filtros.dataFim || dataItem <= filtros.dataFim)
                 )
 
             })
 
     }
 
+    if (filtros.glpi) {
+
+        lista =
+            lista.filter(item => {
+
+                return textoContem(
+                    item.glpi,
+                    filtros.glpi
+                )
+
+            })
+
+    }
+
+    if (filtros.requisicao) {
+
+        lista =
+            lista.filter(item => {
+
+                return textoContem(
+                    [
+                        item.numeroRequisicao || "",
+                        ...(item.requisicoesVinculadas || [])
+                    ].join(" "),
+                    filtros.requisicao
+                )
+
+            })
+
+    }
+
+    if (filtros.material) {
+
+        lista =
+            lista.filter(item => {
+
+                return (item.itens || [])
+                    .some(material => {
+
+                        return textoContem(
+                            `${material.codigo || ""} ${material.descricao || ""}`,
+                            filtros.material
+                        )
+
+                    })
+
+            })
+
+    }
+
+    if (filtros.almoxarifado) {
+
+        lista =
+            lista.filter(item => {
+
+                return (item.itens || [])
+                    .some(material => {
+
+                        return material.almoxarifado === filtros.almoxarifado
+
+                    })
+
+            })
+
+    }
+
+    if (filtros.valorMinimo !== null) {
+
+        lista =
+            lista.filter(item => {
+
+                return obterTotalEstimadoSolicitacao(item) >= filtros.valorMinimo
+
+            })
+
+    }
+
+    if (filtros.valorMaximo !== null) {
+
+        lista =
+            lista.filter(item => {
+
+                return obterTotalEstimadoSolicitacao(item) <= filtros.valorMaximo
+
+            })
+
+    }
+
+    if (usuarioAdmin && filtros.usuarioNome) {
+
+        lista =
+            lista.filter(item => {
+
+                return textoContem(
+                    item.usuarioNome ||
+                        item.usuarioSolicitante?.nome,
+                    filtros.usuarioNome
+                )
+
+            })
+
+    }
+
+    if (usuarioAdmin && filtros.usuarioMatricula) {
+
+        lista =
+            lista.filter(item => {
+
+                return textoContem(
+                    item.usuarioMatricula ||
+                        item.usuarioSolicitante?.matricula,
+                    filtros.usuarioMatricula
+                )
+
+            })
+
+    }
+
+    if (usuarioAdmin && filtros.usuarioPerfil) {
+
+        lista =
+            lista.filter(item => {
+
+                return item.usuarioPerfil === filtros.usuarioPerfil
+
+            })
+
+    }
+
     return lista
+
+}
+
+function limparFiltrosSolicitacoes() {
+
+    [
+        "filtroDataInicio",
+        "filtroDataFim",
+        "filtroStatus",
+        "filtroGlpi",
+        "filtroRequisicao",
+        "filtroMaterial",
+        "filtroAlmoxarifado",
+        "filtroValorMinimo",
+        "filtroValorMaximo",
+        "filtroUsuarioNome",
+        "filtroUsuarioMatricula",
+        "filtroUsuarioPerfil"
+    ].forEach(idFiltro => {
+
+        const campo =
+            document.getElementById(idFiltro)
+
+        if (campo) {
+
+            campo.value = ""
+
+        }
+
+    })
+
+    renderizarSolicitacoes()
 
 }
 
@@ -2785,10 +3258,14 @@ function gerarRelatorioSolicitacoes() {
         "Retirada por",
         "Matricula retirada",
         "Local de uso",
+        "Total itens",
+        "Total estimado",
         "Codigo material",
         "Descricao material",
         "Almoxarifado",
-        "Quantidade"
+        "Quantidade",
+        "Valor unitario",
+        "Subtotal"
     ]
 
     const linhas = []
@@ -2812,16 +3289,20 @@ function gerarRelatorioSolicitacoes() {
                 ),
                 obterTextoRequisicao(solicitacao),
                 solicitacao.usuarioNome ||
-                    solicitacao.usuarioSolicitante ||
+                    solicitacao.usuarioSolicitante?.nome ||
                     "",
                 solicitacao.usuarioMatricula || "",
                 solicitacao.nomeRetirada || "",
                 solicitacao.matriculaRetirada || "",
                 solicitacao.localUso || "",
+                solicitacao.totalItens || "",
+                obterTotalEstimadoSolicitacao(solicitacao) || "",
                 item.codigo || "",
                 item.descricao || "",
                 item.almoxarifado || "",
-                item.quantidade || ""
+                item.quantidade || "",
+                item.valorUnitario || "",
+                item.subtotal || ""
             ])
 
         })
@@ -2909,20 +3390,81 @@ function renderizarSolicitacoes() {
         const requisicaoTexto =
             obterTextoRequisicao(solicitacao)
 
-        const itensHtml =
-            (solicitacao.itens || [])
+        const requisicoesVinculadasTexto =
+            obterTextoRequisicoesVinculadas(solicitacao)
+
+        const totalEstimado =
+            obterTotalEstimadoSolicitacao(solicitacao)
+
+        const totalEstimadoTexto =
+            formatarMoeda(totalEstimado) || "Não informado"
+
+        const statusClasse =
+            (
+                solicitacao.statusAtendimento === "requisicao_vinculada" ||
+                solicitacao.statusAtendimento === "concluida"
+            )
+                ? "vinculada"
+                : ""
+
+        const adminInfoHtml =
+            usuarioEhAdmin()
+                ? `
+                    <div>
+                        <span>Solicitante</span>
+                        <strong>${escaparHtml(solicitacao.usuarioNome || solicitacao.usuarioSolicitante?.nome || "Não informado")}</strong>
+                    </div>
+
+                    <div>
+                        <span>Matrícula solicitante</span>
+                        <strong>${escaparHtml(solicitacao.usuarioMatricula || solicitacao.usuarioSolicitante?.matricula || "Não informada")}</strong>
+                    </div>
+                `
+                : ""
+
+        const itens =
+            solicitacao.itens || []
+
+        const itensResumoHtml =
+            itens
+                .slice(0, 2)
                 .map(item => {
 
                     return `
                         <li>
                             <strong>
-                                ${escaparHtml(item.quantidade)}x
+                                ${escaparHtml(item.quantidade || 0)}x
                             </strong>
 
-                            ${escaparHtml(item.descricao)}
+                            ${escaparHtml(item.descricao || "Material")}
 
                             <small>
                                 Código: ${escaparHtml(item.codigo)} · ${escaparHtml(item.almoxarifado)}
+                            </small>
+                        </li>
+                    `
+
+                })
+                .join("")
+
+        const itensHtml =
+            itens
+                .map(item => {
+
+                    const subtotalTexto =
+                        formatarMoeda(item.subtotal) || ""
+
+                    return `
+                        <li>
+                            <strong>
+                                ${escaparHtml(item.quantidade || 0)}x
+                            </strong>
+
+                            ${escaparHtml(item.descricao || "Material")}
+
+                            <small>
+                                Código: ${escaparHtml(item.codigo)} · ${escaparHtml(item.almoxarifado)}
+                                ${subtotalTexto ? ` · ${escaparHtml(subtotalTexto)}` : ""}
                             </small>
                         </li>
                     `
@@ -2942,9 +3484,13 @@ function renderizarSolicitacoes() {
                     </h3>
                 </div>
 
-                <span class="solicitacao-status">
+                <span class="solicitacao-status ${statusClasse}">
                     ${escaparHtml(statusTexto)}
                 </span>
+            </div>
+
+            <div class="solicitacao-resumo">
+                ${escaparHtml(obterResumoItens(solicitacao))}
             </div>
 
             <div class="solicitacao-info-grid">
@@ -2954,19 +3500,36 @@ function renderizarSolicitacoes() {
                 </div>
 
                 <div>
+                    <span>Requisições vinculadas</span>
+                    <strong>${escaparHtml(requisicoesVinculadasTexto || "Nenhuma")}</strong>
+                </div>
+
+                <div>
                     <span>Local</span>
-                    <strong>${escaparHtml(solicitacao.localUso)}</strong>
+                    <strong>${escaparHtml(solicitacao.localUso || "Não informado")}</strong>
                 </div>
 
                 <div>
                     <span>Retirada</span>
-                    <strong>${escaparHtml(solicitacao.nomeRetirada)}</strong>
+                    <strong>${escaparHtml(solicitacao.nomeRetirada || "Não informado")}</strong>
                 </div>
 
                 <div>
                     <span>Matrícula</span>
-                    <strong>${escaparHtml(solicitacao.matriculaRetirada)}</strong>
+                    <strong>${escaparHtml(solicitacao.matriculaRetirada || "Não informada")}</strong>
                 </div>
+
+                <div>
+                    <span>Total de itens</span>
+                    <strong>${escaparHtml(solicitacao.totalItens || 0)}</strong>
+                </div>
+
+                <div>
+                    <span>Total estimado</span>
+                    <strong>${escaparHtml(totalEstimadoTexto)}</strong>
+                </div>
+
+                ${adminInfoHtml}
             </div>
 
             <div class="solicitacao-itens">
@@ -2975,8 +3538,24 @@ function renderizarSolicitacoes() {
                 </span>
 
                 <ul>
-                    ${itensHtml}
+                    ${itensResumoHtml || "<li>Nenhum item detalhado.</li>"}
                 </ul>
+
+                ${
+                    itens.length > 2
+                        ? `
+                            <details class="solicitacao-detalhes">
+                                <summary>
+                                    Ver todos os itens (${itens.length})
+                                </summary>
+
+                                <ul>
+                                    ${itensHtml}
+                                </ul>
+                            </details>
+                        `
+                        : ""
+                }
             </div>
         `
 

@@ -1823,23 +1823,73 @@ body.light-mode .login-footer {
         grid;
 
     grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+        repeat(auto-fit, minmax(148px, 1fr));
 
     gap:
-        12px;
+        10px;
 
     margin-bottom:
         14px;
 
 }
 
+.filtros-solicitacoes .form-group {
+
+    margin-bottom:
+        0;
+
+}
+
+.filtros-solicitacoes label {
+
+    font-size:
+        11px;
+
+    font-weight:
+        900;
+
+    color:
+        var(--muted);
+
+    margin-bottom:
+        6px;
+
+}
+
+.filtros-solicitacoes input,
+.filtros-solicitacoes select {
+
+    min-height:
+        44px;
+
+    border-radius:
+        15px;
+
+    font-size:
+        13px;
+
+    padding:
+        11px 12px;
+
+}
+
 .acoes-relatorio {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap:
+        10px;
 
     margin-bottom:
         16px;
 
 }
 
+.btn-limpar-filtros,
 .btn-gerar-relatorio,
 .btn-sair-perfil {
 
@@ -1878,6 +1928,16 @@ body.light-mode .login-footer {
 
     gap:
         10px;
+
+}
+
+.btn-limpar-filtros {
+
+    background:
+        rgba(148, 163, 184, 0.13);
+
+    color:
+        var(--text);
 
 }
 
@@ -2071,6 +2131,98 @@ body.light-mode .solicitacao-info-grid>div {
 
 }
 
+.solicitacao-resumo {
+
+    position:
+        relative;
+
+    z-index:
+        1;
+
+    color:
+        var(--muted);
+
+    font-size:
+        13px;
+
+    font-weight:
+        800;
+
+    line-height:
+        1.35;
+
+    margin:
+        -5px 0 14px;
+
+}
+
+.solicitacao-detalhes {
+
+    margin-top:
+        10px;
+
+    border-top:
+        1px solid rgba(255, 255, 255, 0.08);
+
+    padding-top:
+        10px;
+
+}
+
+body.light-mode .solicitacao-detalhes {
+
+    border-top:
+        1px solid rgba(15, 23, 42, 0.08);
+
+}
+
+.solicitacao-detalhes summary {
+
+    cursor:
+        pointer;
+
+    color:
+        var(--primary-light);
+
+    font-size:
+        12px;
+
+    font-weight:
+        900;
+
+    list-style:
+        none;
+
+}
+
+.solicitacao-detalhes summary::-webkit-details-marker {
+
+    display:
+        none;
+
+}
+
+.solicitacao-detalhes summary::after {
+
+    content:
+        " +";
+
+}
+
+.solicitacao-detalhes[open] summary::after {
+
+    content:
+        " -";
+
+}
+
+.solicitacao-detalhes ul {
+
+    margin-top:
+        10px;
+
+}
+
 .perfil-card {
 
     border-radius:
@@ -2222,7 +2374,8 @@ body.light-mode .solicitacao-info-grid>div {
 
     .dashboard-grid,
     .quick-actions-grid,
-    .filtros-solicitacoes {
+    .filtros-solicitacoes,
+    .acoes-relatorio {
 
         grid-template-columns:
             1fr;

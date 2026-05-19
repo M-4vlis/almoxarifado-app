@@ -619,7 +619,12 @@ function normalizarSolicitacaoFirebase(documento) {
             dados.usuarioMatricula || "",
 
         usuarioPerfil:
-            dados.usuarioPerfil || "usuario",
+            normalizarPerfil(
+                dados.usuarioPerfil
+            ),
+
+        usuarioSolicitante:
+            dados.usuarioSolicitante || null,
 
         status:
             dados.status || "",
