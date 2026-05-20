@@ -134,7 +134,16 @@ function normalizarPerfil(perfil) {
 // TRATAR VALOR NUMERICO
 // =========================
 
-function tratarNumero(valor) {
+function normalizarNumeroMonetario(valor) {
+
+    if (
+        valor === null ||
+        valor === undefined
+    ) {
+
+        return 0
+
+    }
 
     if (typeof valor === "string") {
 
@@ -142,7 +151,23 @@ function tratarNumero(valor) {
             valor
                 .trim()
                 .replace("R$", "")
+                .replace("r$", "")
                 .replace(/\s/g, "")
+
+        if (
+            texto === "" ||
+            texto === "-" ||
+            texto.toLowerCase() === "nan" ||
+            texto.toLowerCase() === "null" ||
+            texto.toLowerCase() === "none"
+        ) {
+
+            return 0
+
+        }
+
+        texto =
+            texto.replace(/[^0-9,.-]/g, "")
 
         if (texto.includes(",") && texto.includes(".")) {
 
@@ -173,6 +198,30 @@ function tratarNumero(valor) {
 
         }
 
+        else if ((texto.match(/\./g) || []).length > 1) {
+
+            texto =
+                texto.replace(/\./g, "")
+
+        }
+
+        else if (texto.includes(".")) {
+
+            const partes =
+                texto.split(".")
+
+            if (
+                partes[partes.length - 1].length === 3 &&
+                partes[0].length <= 3
+            ) {
+
+                texto =
+                    texto.replace(/\./g, "")
+
+            }
+
+        }
+
         valor =
             texto
 
@@ -191,10 +240,16 @@ function tratarNumero(valor) {
 
 }
 
+function tratarNumero(valor) {
+
+    return normalizarNumeroMonetario(valor)
+
+}
+
 function formatarMoedaFirebase(valor) {
 
     const numero =
-        tratarNumero(valor)
+        normalizarNumeroMonetario(valor)
 
     return numero.toLocaleString(
         "pt-BR",
@@ -579,8 +634,13 @@ async function prepararItensSolicitacao(dadosSolicitacao) {
                 const valorMaterial =
                     await buscarValorUnitarioMaterial(item)
 
-                const valorTotalItem =
-                    quantidade * valorMaterial.valorUnitarioNumero
+                const subtotal =
+                    calcularSubtotalItem({
+                        quantidade:
+                            quantidade,
+                        valorUnitarioNumero:
+                            valorMaterial.valorUnitarioNumero
+                    })
 
                 return {
 
@@ -596,10 +656,10 @@ async function prepararItensSolicitacao(dadosSolicitacao) {
                         valorMaterial.valorUnitarioNumero,
 
                     valorTotalItem:
-                        valorTotalItem,
+                        subtotal,
 
                     subtotal:
-                        valorTotalItem
+                        subtotal
 
                 }
 
@@ -624,13 +684,18 @@ async function salvarSolicitacaoFirebase(dadosSolicitacao) {
             dadosSolicitacao
         )
 
-    const totalEstimado =
+    const valorTotal =
+        calcularTotalSolicitacao({
+            itens:
+                itens
+        })
+
+    const totalItens =
         itens.reduce(
             (total, item) => {
 
-                return total + tratarNumero(
-                    item.valorTotalItem ||
-                    item.subtotal
+                return total + normalizarNumeroMonetario(
+                    item.quantidade
                 )
 
             },
@@ -645,11 +710,17 @@ async function salvarSolicitacaoFirebase(dadosSolicitacao) {
             itens:
                 itens,
 
+            totalItens:
+                totalItens,
+
+            valorTotal:
+                valorTotal,
+
             totalEstimado:
-                totalEstimado,
+                valorTotal,
 
             valorTotalEstimado:
-                totalEstimado,
+                valorTotal,
 
             criadoEm:
                 serverTimestamp(),
@@ -711,6 +782,25 @@ function normalizarSolicitacaoFirebase(documento) {
     const dados =
         documento.data()
 
+    const itens =
+        Array.isArray(dados.itens)
+            ? dados.itens
+            : []
+
+    const valorTotalCalculado =
+        calcularTotalSolicitacao({
+            itens:
+                itens
+        })
+
+    const valorTotal =
+        tratarNumero(dados.valorTotal) ||
+        valorTotalCalculado ||
+        tratarNumero(
+            dados.valorTotalEstimado ||
+            dados.totalEstimado
+        )
+
     return {
 
         id:
@@ -729,21 +819,19 @@ function normalizarSolicitacaoFirebase(documento) {
             dados.matriculaRetirada || "",
 
         itens:
-            dados.itens || [],
+            itens,
 
         totalItens:
             dados.totalItens || 0,
 
         totalEstimado:
-            tratarNumero(
-                dados.totalEstimado
-            ),
+            valorTotal,
+
+        valorTotal:
+            valorTotal,
 
         valorTotalEstimado:
-            tratarNumero(
-                dados.valorTotalEstimado ||
-                dados.totalEstimado
-            ),
+            valorTotal,
 
         usuarioUid:
             dados.usuarioUid || "",
@@ -955,6 +1043,39 @@ async function listarMinhasSolicitacoesFirebase(usuarioUid, opcoes = {}) {
                 : cursor,
         temMais
     }
+
+}
+
+function calcularSubtotalItem(item) {
+
+    const quantidade =
+        normalizarNumeroMonetario(item?.quantidade)
+
+    const valorUnitario =
+        normalizarNumeroMonetario(
+            item?.valorUnitarioNumero ||
+            item?.valorUnitario
+        )
+
+    return quantidade * valorUnitario
+
+}
+
+function calcularTotalSolicitacao(solicitacao) {
+
+    const itens =
+        Array.isArray(solicitacao?.itens)
+            ? solicitacao.itens
+            : []
+
+    return itens.reduce(
+        (total, item) => {
+
+            return total + calcularSubtotalItem(item)
+
+        },
+        0
+    )
 
 }
 

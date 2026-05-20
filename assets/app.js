@@ -1136,7 +1136,16 @@ function atualizarDashboardInicio() {
 
 }
 
-function converterValorNumero(valor) {
+function normalizarNumeroMonetario(valor) {
+
+    if (
+        valor === null ||
+        valor === undefined
+    ) {
+
+        return 0
+
+    }
 
     if (typeof valor === "string") {
 
@@ -1144,7 +1153,23 @@ function converterValorNumero(valor) {
             valor
                 .trim()
                 .replace("R$", "")
+                .replace("r$", "")
                 .replace(/\s/g, "")
+
+        if (
+            texto === "" ||
+            texto === "-" ||
+            texto.toLowerCase() === "nan" ||
+            texto.toLowerCase() === "null" ||
+            texto.toLowerCase() === "none"
+        ) {
+
+            return 0
+
+        }
+
+        texto =
+            texto.replace(/[^0-9,.-]/g, "")
 
         if (texto.includes(",") && texto.includes(".")) {
 
@@ -1175,6 +1200,30 @@ function converterValorNumero(valor) {
 
         }
 
+        else if ((texto.match(/\./g) || []).length > 1) {
+
+            texto =
+                texto.replace(/\./g, "")
+
+        }
+
+        else if (texto.includes(".")) {
+
+            const partes =
+                texto.split(".")
+
+            if (
+                partes[partes.length - 1].length === 3 &&
+                partes[0].length <= 3
+            ) {
+
+                texto =
+                    texto.replace(/\./g, "")
+
+            }
+
+        }
+
         valor =
             texto
 
@@ -1193,10 +1242,16 @@ function converterValorNumero(valor) {
 
 }
 
+function converterValorNumero(valor) {
+
+    return normalizarNumeroMonetario(valor)
+
+}
+
 function formatarMoedaTexto(valor) {
 
     const numero =
-        converterValorNumero(valor)
+        normalizarNumeroMonetario(valor)
 
     return numero.toLocaleString(
         "pt-BR",
@@ -1260,39 +1315,135 @@ function buscarMaterialPorItem(item) {
 
 }
 
+function obterValorUnitarioItem(item) {
+
+    const valorItem =
+        normalizarNumeroMonetario(
+            item?.valorUnitarioNumero ||
+            item?.valorUnitario
+        )
+
+    if (valorItem > 0) {
+
+        return valorItem
+
+    }
+
+    const materialReferencia =
+        buscarMaterialPorItem(item)
+
+    const valorReferencia =
+        normalizarNumeroMonetario(
+            materialReferencia?.valorUnitarioNumero ||
+            materialReferencia?.valorUnitario
+        )
+
+    if (valorReferencia > 0) {
+
+        return valorReferencia
+
+    }
+
+    const quantidade =
+        normalizarNumeroMonetario(item?.quantidade)
+
+    const subtotal =
+        normalizarNumeroMonetario(
+            item?.subtotal ||
+            item?.valorTotalItem
+        )
+
+    if (quantidade > 0 && subtotal > 0) {
+
+        return subtotal / quantidade
+
+    }
+
+    return 0
+
+}
+
+function calcularSubtotalItem(item) {
+
+    const quantidade =
+        normalizarNumeroMonetario(item?.quantidade)
+
+    const valorUnitario =
+        obterValorUnitarioItem(item)
+
+    if (quantidade > 0 && valorUnitario > 0) {
+
+        return quantidade * valorUnitario
+
+    }
+
+    return normalizarNumeroMonetario(
+        item?.subtotal ||
+        item?.valorTotalItem
+    )
+
+}
+
+function calcularTotalSolicitacao(solicitacao) {
+
+    const valorTotal =
+        normalizarNumeroMonetario(solicitacao?.valorTotal)
+
+    if (valorTotal > 0) {
+
+        return valorTotal
+
+    }
+
+    const totalItens =
+        (solicitacao?.itens || [])
+            .reduce(
+                (total, item) => {
+
+                    return total + calcularSubtotalItem(item)
+
+                },
+                0
+            )
+
+    if (totalItens > 0) {
+
+        return totalItens
+
+    }
+
+    return normalizarNumeroMonetario(
+        solicitacao?.valorTotalEstimado ||
+        solicitacao?.totalEstimado
+    )
+
+}
+
 function recalcularItemSolicitacao(item) {
 
     const materialReferencia =
         buscarMaterialPorItem(item)
 
     const quantidade =
-        converterValorNumero(item?.quantidade)
-
-    const valorItem =
-        converterValorNumero(
-            item?.valorUnitarioNumero ||
-            item?.valorUnitario
-        )
-
-    const valorReferencia =
-        converterValorNumero(
-            materialReferencia?.valorUnitarioNumero ||
-            materialReferencia?.valorUnitario
-        )
+        normalizarNumeroMonetario(item?.quantidade)
 
     const valorUnitarioNumero =
-        valorItem > 0
-            ? valorItem
-            : valorReferencia
+        obterValorUnitarioItem(item)
 
     const valorUnitario =
-        valorUnitarioNumero === valorReferencia && materialReferencia?.valorUnitario
+        valorUnitarioNumero === obterValorUnitarioNumeroMaterial(materialReferencia) &&
+        materialReferencia?.valorUnitario
             ? materialReferencia.valorUnitario
-            : item?.valorUnitario || formatarMoedaTexto(valorUnitarioNumero)
+            : formatarMoedaBR(valorUnitarioNumero)
 
 
     const valorTotalItem =
-        quantidade * valorUnitarioNumero
+        calcularSubtotalItem({
+            quantidade:
+                quantidade,
+            valorUnitarioNumero:
+                valorUnitarioNumero
+        })
 
     item.quantidade =
         quantidade
@@ -1780,6 +1931,12 @@ function obterFiltrosDashboardAdmin() {
                 ?.trim() || ""
 
     }
+
+}
+
+function formatarMoedaBR(valor) {
+
+    return formatarMoedaTexto(valor)
 
 }
 
@@ -2358,6 +2515,7 @@ function renderizarRankingsAdminResumo(resumo) {
 
                 const total =
                     formatarMoeda(
+                        solicitacao.valorTotal ||
                         solicitacao.totalEstimado ||
                         solicitacao.valorTotalEstimado
                     ) || "R$ 0,00"
@@ -3711,18 +3869,11 @@ function montarDadosSolicitacaoFirebase(dadosFormulario) {
 
         })
 
-    const valorTotalEstimado =
-        itens.reduce(
-            (total, item) => {
-
-                return total + converterValorNumero(
-                    item.valorTotalItem ||
-                    item.subtotal
-                )
-
-            },
-            0
-        )
+    const valorTotal =
+        calcularTotalSolicitacao({
+            itens:
+                itens
+        })
 
     return {
 
@@ -3773,17 +3924,22 @@ function montarDadosSolicitacaoFirebase(dadosFormulario) {
             itens.reduce(
                 (total, item) => {
 
-                    return total + Number(item.quantidade || 0)
+                    return total + normalizarNumeroMonetario(
+                        item.quantidade
+                    )
 
                 },
                 0
             ),
 
+        valorTotal:
+            valorTotal,
+
         valorTotalEstimado:
-            valorTotalEstimado,
+            valorTotal,
 
         totalEstimado:
-            valorTotalEstimado,
+            valorTotal,
 
         origem:
             "app_web_github_pages",
@@ -4302,87 +4458,20 @@ function obterDataInputSolicitacao(solicitacao) {
 
 function obterTotalEstimadoSolicitacao(solicitacao) {
 
-    const valorTotalEstimado =
-        converterValorNumero(solicitacao.valorTotalEstimado)
-
-    if (valorTotalEstimado > 0) {
-
-        return valorTotalEstimado
-
-    }
-
-    const totalEstimado =
-        converterValorNumero(solicitacao.totalEstimado)
-
-    if (totalEstimado > 0) {
-
-        return totalEstimado
-
-    }
-
-    return (solicitacao.itens || [])
-        .reduce(
-            (total, item) => {
-
-                return total + obterValorTotalItemDashboard(item)
-
-            },
-            0
-        )
+    return calcularTotalSolicitacao(solicitacao)
 
 }
 
 function obterValorTotalItemDashboard(item) {
 
-    const valorTotalItem =
-        converterValorNumero(item.valorTotalItem)
-
-    if (valorTotalItem > 0) {
-
-        return valorTotalItem
-
-    }
-
-    const subtotal =
-        converterValorNumero(item.subtotal)
-
-    if (subtotal > 0) {
-
-        return subtotal
-
-    }
-
-    const quantidade =
-        converterValorNumero(item.quantidade)
-
-    const materialReferencia =
-        buscarMaterialPorItem(item)
-
-    const valorItem =
-        converterValorNumero(
-            item.valorUnitarioNumero ||
-            item.valorUnitario
-        )
-
-    const valorReferencia =
-        converterValorNumero(
-            materialReferencia?.valorUnitarioNumero ||
-            materialReferencia?.valorUnitario
-        )
-
-    const valorUnitario =
-        valorItem > 0
-            ? valorItem
-            : valorReferencia
-
-    return quantidade * valorUnitario
+    return calcularSubtotalItem(item)
 
 }
 
 function formatarMoeda(valor) {
 
     const numero =
-        Number(valor || 0)
+        normalizarNumeroMonetario(valor)
 
     if (!Number.isFinite(numero) || numero <= 0) {
 
@@ -4390,15 +4479,7 @@ function formatarMoeda(valor) {
 
     }
 
-    return numero.toLocaleString(
-        "pt-BR",
-        {
-            style:
-                "currency",
-            currency:
-                "BRL"
-        }
-    )
+    return formatarMoedaBR(numero)
 
 }
 
@@ -4760,6 +4841,15 @@ function gerarRelatorioSolicitacoes() {
 
         itens.forEach(item => {
 
+            const valorUnitario =
+                obterValorUnitarioItem(item)
+
+            const subtotal =
+                calcularSubtotalItem(item)
+
+            const totalSolicitacao =
+                calcularTotalSolicitacao(solicitacao)
+
             linhas.push([
                 solicitacao.criadoEmFormatado ||
                     solicitacao.dataLocal ||
@@ -4777,13 +4867,13 @@ function gerarRelatorioSolicitacoes() {
                 solicitacao.matriculaRetirada || "",
                 solicitacao.localUso || "",
                 solicitacao.totalItens || "",
-                obterTotalEstimadoSolicitacao(solicitacao) || "",
+                formatarMoedaBR(totalSolicitacao),
                 item.codigo || "",
                 item.descricao || "",
                 item.almoxarifado || "",
                 item.quantidade || "",
-                item.valorUnitario || "",
-                obterValorTotalItemDashboard(item) || ""
+                formatarMoedaBR(valorUnitario),
+                formatarMoedaBR(subtotal)
             ])
 
         })

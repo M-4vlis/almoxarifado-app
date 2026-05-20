@@ -101,15 +101,38 @@ def normalizar_perfil(valor):
     return "usuario"
 
 
-def converter_valor_brasileiro(valor):
-    if pd.isna(valor):
+def normalizar_numero_monetario(valor):
+    if valor is None:
         return 0
+
+    try:
+        if pd.isna(valor):
+            return 0
+    except (TypeError, ValueError):
+        pass
+
+    if isinstance(valor, (int, float)):
+        numero = float(valor)
+
+        if not math.isfinite(numero):
+            return 0
+
+        return numero
 
     if isinstance(valor, str):
         texto = valor.strip()
+
+        if texto.lower() in ["", "-", "nan", "none", "null"]:
+            return 0
+
         texto = texto.replace("R$", "")
+        texto = texto.replace("r$", "")
         texto = texto.replace("\xa0", "")
         texto = texto.replace(" ", "")
+        texto = re.sub(r"[^0-9,.\-]", "", texto)
+
+        if texto in ["", "-", ".", ","]:
+            return 0
 
         if "," in texto and "." in texto:
             if texto.rfind(",") > texto.rfind("."):
@@ -121,6 +144,15 @@ def converter_valor_brasileiro(valor):
         elif "," in texto:
             texto = texto.replace(".", "")
             texto = texto.replace(",", ".")
+
+        elif texto.count(".") > 1:
+            texto = texto.replace(".", "")
+
+        elif "." in texto:
+            partes = texto.split(".")
+
+            if len(partes[-1]) == 3 and len(partes[0]) <= 3:
+                texto = texto.replace(".", "")
 
         valor = texto
 
@@ -135,8 +167,12 @@ def converter_valor_brasileiro(valor):
     return numero
 
 
+def converter_valor_brasileiro(valor):
+    return normalizar_numero_monetario(valor)
+
+
 def formatar_valor_unitario(valor):
-    numero = converter_valor_brasileiro(valor)
+    numero = normalizar_numero_monetario(valor)
 
     texto = f"R$ {numero:,.2f}"
     texto = texto.replace(",", "X")
@@ -147,7 +183,7 @@ def formatar_valor_unitario(valor):
 
 
 def preparar_valor_unitario(valor):
-    numero = converter_valor_brasileiro(valor)
+    numero = normalizar_numero_monetario(valor)
 
     return {
         "valorUnitario": formatar_valor_unitario(numero),
@@ -398,6 +434,12 @@ def ler_materiais():
         coluna_valor_unitario = obter_coluna(
             df.columns,
             [
+                "Valor Unitario",
+                "Valor unitario",
+                "VALOR UNITARIO",
+                "Valor Unitário",
+                "Valor unitário",
+                "VALOR UNITÁRIO",
                 "Valor Unitário",
                 "Valor unitário",
                 "VALOR UNITÁRIO",
@@ -414,6 +456,12 @@ def ler_materiais():
             print(
                 "AVISO: Coluna de valor unitario nao encontrada "
                 f"na aba {aba}. Importando valores como 0."
+            )
+
+        else:
+            print(
+                f"Aba {aba}: coluna de valor unitario encontrada: "
+                f"{coluna_valor_unitario}"
             )
 
         df = df[
@@ -489,12 +537,14 @@ def ler_materiais():
             if len(descricao) > len(material_existente.get("descricao") or ""):
                 material_existente["descricao"] = descricao
 
+            valor_existente = normalizar_numero_monetario(
+                material_existente.get("valorUnitarioNumero") or
+                material_existente.get("valorUnitario")
+            )
+
             if (
                 valor_unitario["valorUnitarioNumero"] > 0 and
-                converter_valor_brasileiro(
-                    material_existente.get("valorUnitarioNumero") or
-                    material_existente.get("valorUnitario")
-                ) <= 0
+                valor_unitario["valorUnitarioNumero"] > valor_existente
             ):
                 material_existente["valorUnitario"] = valor_unitario["valorUnitario"]
                 material_existente["valorUnitarioNumero"] = valor_unitario["valorUnitarioNumero"]
@@ -1030,10 +1080,7 @@ def atualizar_solicitacoes_com_requisicoes(db, mapa, dry_run):
 
 
 def obter_numero_seguro(valor):
-    try:
-        numero = float(valor or 0)
-    except (TypeError, ValueError):
-        return 0
+    numero = normalizar_numero_monetario(valor)
 
     if not math.isfinite(numero):
         return 0
@@ -1041,20 +1088,94 @@ def obter_numero_seguro(valor):
     return numero
 
 
-def obter_total_solicitacao(dados):
-    total = obter_numero_seguro(
-        dados.get("valorTotalEstimado") or dados.get("totalEstimado")
+def chave_material(codigo, almoxarifado):
+    return (
+        limpar_numero(codigo),
+        limpar_texto(almoxarifado).upper(),
     )
+
+
+def carregar_mapa_materiais_firestore(db):
+    materiais_por_chave = {}
+
+    for snapshot in db.collection("materiais").stream():
+        dados = snapshot.to_dict() or {}
+        chave = chave_material(
+            dados.get("codigo"),
+            dados.get("almoxarifado"),
+        )
+
+        if not chave[0] or not chave[1]:
+            continue
+
+        materiais_por_chave[chave] = obter_numero_seguro(
+            dados.get("valorUnitarioNumero") or dados.get("valorUnitario")
+        )
+
+    return materiais_por_chave
+
+
+def obter_valor_unitario_item(item, materiais_por_chave=None):
+    valor = obter_numero_seguro(
+        item.get("valorUnitarioNumero") or item.get("valorUnitario")
+    )
+
+    if valor > 0:
+        return valor
+
+    if materiais_por_chave:
+        valor_material = obter_numero_seguro(
+            materiais_por_chave.get(
+                chave_material(
+                    item.get("codigo"),
+                    item.get("almoxarifado"),
+                )
+            )
+        )
+
+        if valor_material > 0:
+            return valor_material
+
+    quantidade = obter_numero_seguro(item.get("quantidade"))
+    subtotal = obter_numero_seguro(
+        item.get("subtotal") or item.get("valorTotalItem")
+    )
+
+    if quantidade > 0 and subtotal > 0:
+        return subtotal / quantidade
+
+    return 0
+
+
+def calcular_subtotal_item(item, materiais_por_chave=None):
+    quantidade = obter_numero_seguro(item.get("quantidade"))
+    valor_unitario = obter_valor_unitario_item(item, materiais_por_chave)
+
+    if quantidade > 0 and valor_unitario > 0:
+        return quantidade * valor_unitario
+
+    return obter_numero_seguro(
+        item.get("subtotal") or item.get("valorTotalItem")
+    )
+
+
+def obter_total_solicitacao(dados, materiais_por_chave=None):
+    total = obter_numero_seguro(dados.get("valorTotal"))
 
     if total > 0:
         return total
 
-    return sum(
-        obter_numero_seguro(
-            item.get("valorTotalItem") or item.get("subtotal")
-        )
+    total_itens = sum(
+        calcular_subtotal_item(item, materiais_por_chave)
         for item in dados.get("itens") or []
         if isinstance(item, dict)
+    )
+
+    if total_itens > 0:
+        return total_itens
+
+    return obter_numero_seguro(
+        dados.get("valorTotalEstimado") or dados.get("totalEstimado")
     )
 
 
@@ -1125,6 +1246,7 @@ def recalcular_resumo_admin(db, dry_run):
     materiais_quantidade = {}
     almoxarifados_quantidade = {}
     recentes = []
+    materiais_por_chave = carregar_mapa_materiais_firestore(db)
 
     for snapshot in db.collection("solicitacoes").stream():
         dados = snapshot.to_dict() or {}
@@ -1138,7 +1260,7 @@ def recalcular_resumo_admin(db, dry_run):
         if solicitacao_tem_requisicao(dados):
             vinculadas += 1
 
-        total = obter_total_solicitacao(dados)
+        total = obter_total_solicitacao(dados, materiais_por_chave)
         total_estimado += total
 
         nome_usuario = (
@@ -1211,9 +1333,7 @@ def recalcular_resumo_admin(db, dry_run):
                 continue
 
             quantidade = obter_quantidade_item(item)
-            subtotal = obter_numero_seguro(
-                item.get("valorTotalItem") or item.get("subtotal")
-            )
+            subtotal = calcular_subtotal_item(item, materiais_por_chave)
             total_itens += quantidade
 
             somar_ranking(
