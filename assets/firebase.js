@@ -16,6 +16,8 @@ import {
     query,
     where,
     orderBy,
+    limit,
+    startAfter,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"
 
@@ -64,6 +66,9 @@ const db =
 
 const auth =
     getAuth(app)
+
+const cacheValoresMateriais =
+    new Map()
 
 // =========================
 // TRATAR MATRÍCULA
@@ -474,10 +479,16 @@ async function buscarValorUnitarioMaterial(item) {
 
     }
 
-    try {
+    const idMaterial =
+        `${codigo}_${normalizarIdMaterial(almoxarifado)}`
 
-        const idMaterial =
-            `${codigo}_${normalizarIdMaterial(almoxarifado)}`
+    if (cacheValoresMateriais.has(idMaterial)) {
+
+        return cacheValoresMateriais.get(idMaterial)
+
+    }
+
+    try {
 
         const referenciaMaterial =
             doc(db, "materiais", idMaterial)
@@ -487,12 +498,19 @@ async function buscarValorUnitarioMaterial(item) {
 
         if (!snapshotMaterial.exists()) {
 
-            return {
+            const valorVazio = {
                 valorUnitario:
                     formatarMoedaFirebase(0),
                 valorUnitarioNumero:
                     0
             }
+
+            cacheValoresMateriais.set(
+                idMaterial,
+                valorVazio
+            )
+
+            return valorVazio
 
         }
 
@@ -505,13 +523,20 @@ async function buscarValorUnitarioMaterial(item) {
                 dadosMaterial.valorUnitario
             )
 
-        return {
+        const valorMaterial = {
             valorUnitario:
                 dadosMaterial.valorUnitario ||
                 formatarMoedaFirebase(valorUnitarioNumero),
             valorUnitarioNumero:
                 valorUnitarioNumero
         }
+
+        cacheValoresMateriais.set(
+            idMaterial,
+            valorMaterial
+        )
+
+        return valorMaterial
 
     }
 
@@ -860,41 +885,76 @@ async function listarMateriaisFirebase() {
 // LISTAR MINHAS SOLICITAÇÕES
 // =========================
 
-async function listarMinhasSolicitacoesFirebase(usuarioUid) {
+async function listarMinhasSolicitacoesFirebase(usuarioUid, opcoes = {}) {
+
+    const limite =
+        Number(opcoes.limite || 20)
+
+    const cursor =
+        opcoes.cursor || null
 
     const referencia =
         collection(db, "solicitacoes")
 
+    const filtros = [
+        where(
+            "usuarioUid",
+            "==",
+            usuarioUid
+        ),
+        orderBy(
+            "criadoEm",
+            "desc"
+        )
+    ]
+
+    if (cursor) {
+
+        filtros.push(
+            startAfter(cursor)
+        )
+
+    }
+
+    filtros.push(
+        limit(limite + 1)
+    )
+
     const consulta =
         query(
             referencia,
-            where(
-                "usuarioUid",
-                "==",
-                usuarioUid
-            ),
-            orderBy(
-                "criadoEm",
-                "desc"
-            )
+            ...filtros
         )
 
     const snapshot =
         await getDocs(consulta)
 
-    const solicitacoes = []
+    const documentos =
+        snapshot.docs
 
-    snapshot.forEach(documento => {
+    const temMais =
+        documentos.length > limite
 
-        solicitacoes.push(
-            normalizarSolicitacaoFirebase(
+    const documentosPagina =
+        documentos.slice(0, limite)
+
+    const solicitacoes =
+        documentosPagina.map(documento => {
+
+            return normalizarSolicitacaoFirebase(
                 documento
             )
-        )
 
-    })
+        })
 
-    return solicitacoes
+    return {
+        solicitacoes,
+        ultimoDocumento:
+            documentosPagina.length > 0
+                ? documentosPagina[documentosPagina.length - 1]
+                : cursor,
+        temMais
+    }
 
 }
 
@@ -903,36 +963,71 @@ async function listarMinhasSolicitacoesFirebase(usuarioUid) {
 // USO ADMIN
 // =========================
 
-async function listarTodasSolicitacoesFirebase() {
+async function listarTodasSolicitacoesFirebase(opcoes = {}) {
+
+    const limite =
+        Number(opcoes.limite || 20)
+
+    const cursor =
+        opcoes.cursor || null
 
     const referencia =
         collection(db, "solicitacoes")
 
+    const filtros = [
+        orderBy(
+            "criadoEm",
+            "desc"
+        )
+    ]
+
+    if (cursor) {
+
+        filtros.push(
+            startAfter(cursor)
+        )
+
+    }
+
+    filtros.push(
+        limit(limite + 1)
+    )
+
     const consulta =
         query(
             referencia,
-            orderBy(
-                "criadoEm",
-                "desc"
-            )
+            ...filtros
         )
 
     const snapshot =
         await getDocs(consulta)
 
-    const solicitacoes = []
+    const documentos =
+        snapshot.docs
 
-    snapshot.forEach(documento => {
+    const temMais =
+        documentos.length > limite
 
-        solicitacoes.push(
-            normalizarSolicitacaoFirebase(
+    const documentosPagina =
+        documentos.slice(0, limite)
+
+    const solicitacoes =
+        documentosPagina.map(documento => {
+
+            return normalizarSolicitacaoFirebase(
                 documento
             )
-        )
 
-    })
+        })
 
-    return solicitacoes
+    return {
+        solicitacoes,
+        ultimoDocumento:
+            documentosPagina.length > 0
+                ? documentosPagina[documentosPagina.length - 1]
+                : cursor,
+        temMais
+    }
 
 }
 
@@ -941,7 +1036,7 @@ async function listarTodasSolicitacoesFirebase() {
 // CONFORME PERFIL
 // =========================
 
-async function listarSolicitacoesPorPerfilFirebase(usuario) {
+async function listarSolicitacoesPorPerfilFirebase(usuario, opcoes = {}) {
 
     if (!usuario) {
 
@@ -951,13 +1046,36 @@ async function listarSolicitacoesPorPerfilFirebase(usuario) {
 
     if (usuario.perfil === "admin") {
 
-        return await listarTodasSolicitacoesFirebase()
+        return await listarTodasSolicitacoesFirebase(opcoes)
 
     }
 
     return await listarMinhasSolicitacoesFirebase(
-        usuario.uid
+        usuario.uid,
+        opcoes
     )
+
+}
+
+// =========================
+// RESUMO ADMIN
+// =========================
+
+async function buscarResumoAdminFirebase() {
+
+    const referencia =
+        doc(db, "resumosAdmin", "dashboardGeral")
+
+    const snapshot =
+        await getDoc(referencia)
+
+    if (!snapshot.exists()) {
+
+        return null
+
+    }
+
+    return snapshot.data()
 
 }
 
@@ -976,5 +1094,6 @@ export {
     salvarSolicitacaoFirebase,
     listarMinhasSolicitacoesFirebase,
     listarTodasSolicitacoesFirebase,
-    listarSolicitacoesPorPerfilFirebase
+    listarSolicitacoesPorPerfilFirebase,
+    buscarResumoAdminFirebase
 }

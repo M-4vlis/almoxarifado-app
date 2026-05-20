@@ -705,6 +705,16 @@ def importar_materiais(db, dry_run, desativar_ausentes):
     if desativar_ausentes:
         print(f"Materiais ausentes desativados: {desativados}")
 
+    if not dry_run:
+        db.collection("configuracoes").document("materiais").set(
+            {
+                "totalAtivos": len(materiais),
+                "atualizadoEm": timestamp_servidor(dry_run),
+                "origem": "importar_firebase",
+            },
+            merge=True,
+        )
+
 
 def obter_usuario_auth(email):
     try:
@@ -1019,6 +1029,286 @@ def atualizar_solicitacoes_com_requisicoes(db, mapa, dry_run):
     imprimir_resumo_atualizacao_solicitacoes(resumo)
 
 
+def obter_numero_seguro(valor):
+    try:
+        numero = float(valor or 0)
+    except (TypeError, ValueError):
+        return 0
+
+    if not math.isfinite(numero):
+        return 0
+
+    return numero
+
+
+def obter_total_solicitacao(dados):
+    total = obter_numero_seguro(
+        dados.get("valorTotalEstimado") or dados.get("totalEstimado")
+    )
+
+    if total > 0:
+        return total
+
+    return sum(
+        obter_numero_seguro(
+            item.get("valorTotalItem") or item.get("subtotal")
+        )
+        for item in dados.get("itens") or []
+        if isinstance(item, dict)
+    )
+
+
+def obter_quantidade_item(item):
+    return obter_numero_seguro(item.get("quantidade"))
+
+
+def solicitacao_tem_requisicao(dados):
+    return bool(
+        dados.get("numeroRequisicao") or
+        dados.get("requisicoesVinculadas") or
+        dados.get("statusAtendimento") in ["requisicao_vinculada", "concluida"]
+    )
+
+
+def somar_ranking(mapa, chave, quantidade=0, total=0, detalhe=""):
+    chave_final = limpar_texto(chave) or "Nao informado"
+
+    if chave_final not in mapa:
+        mapa[chave_final] = {
+            "label": chave_final,
+            "detalhe": detalhe,
+            "quantidade": 0,
+            "total": 0,
+        }
+
+    mapa[chave_final]["quantidade"] += quantidade
+    mapa[chave_final]["total"] += total
+
+    if detalhe and not mapa[chave_final].get("detalhe"):
+        mapa[chave_final]["detalhe"] = detalhe
+
+
+def obter_top_ranking(mapa, campo, limite=5):
+    return sorted(
+        mapa.values(),
+        key=lambda item: obter_numero_seguro(item.get(campo)),
+        reverse=True,
+    )[:limite]
+
+
+def obter_data_ordenacao_solicitacao(dados):
+    criado_em = dados.get("criadoEm")
+
+    if hasattr(criado_em, "timestamp"):
+        return criado_em.timestamp()
+
+    return 0
+
+
+def recalcular_resumo_admin(db, dry_run):
+    if dry_run:
+        print("Resumo admin nao recalculado no dry-run.")
+        return
+
+    total_solicitacoes = 0
+    aguardando = 0
+    vinculadas = 0
+    total_itens = 0
+    total_estimado = 0
+    usuarios = set()
+    glpis = set()
+    requisicoes = set()
+    usuarios_quantidade = {}
+    usuarios_valor = {}
+    glpis_valor = {}
+    requisicoes_valor = {}
+    materiais_quantidade = {}
+    almoxarifados_quantidade = {}
+    recentes = []
+
+    for snapshot in db.collection("solicitacoes").stream():
+        dados = snapshot.to_dict() or {}
+        total_solicitacoes += 1
+
+        status_atendimento = dados.get("statusAtendimento") or ""
+
+        if status_atendimento == "aguardando_requisicao":
+            aguardando += 1
+
+        if solicitacao_tem_requisicao(dados):
+            vinculadas += 1
+
+        total = obter_total_solicitacao(dados)
+        total_estimado += total
+
+        nome_usuario = (
+            dados.get("usuarioNome") or
+            (dados.get("usuarioSolicitante") or {}).get("nome") or
+            "Nao informado"
+        )
+        matricula_usuario = (
+            dados.get("usuarioMatricula") or
+            (dados.get("usuarioSolicitante") or {}).get("matricula") or
+            ""
+        )
+        chave_usuario = (
+            f"{nome_usuario} ({matricula_usuario})"
+            if matricula_usuario
+            else nome_usuario
+        )
+
+        if dados.get("usuarioUid") or matricula_usuario or nome_usuario:
+            usuarios.add(dados.get("usuarioUid") or matricula_usuario or nome_usuario)
+
+        glpi = limpar_texto(dados.get("glpi"))
+
+        if glpi:
+            glpis.add(glpi)
+
+        lista_requisicoes = [
+            dados.get("numeroRequisicao"),
+            *(dados.get("requisicoesVinculadas") or []),
+        ]
+
+        lista_requisicoes = [
+            limpar_texto(requisicao)
+            for requisicao in lista_requisicoes
+            if limpar_texto(requisicao)
+        ]
+
+        for requisicao in set(lista_requisicoes):
+            requisicoes.add(requisicao)
+            somar_ranking(
+                requisicoes_valor,
+                requisicao,
+                quantidade=1,
+                total=total,
+                detalhe=f"GLPI {glpi or '-'}",
+            )
+
+        somar_ranking(
+            usuarios_quantidade,
+            chave_usuario,
+            quantidade=1,
+            total=total,
+        )
+        somar_ranking(
+            usuarios_valor,
+            chave_usuario,
+            quantidade=1,
+            total=total,
+        )
+        somar_ranking(
+            glpis_valor,
+            glpi or "Sem GLPI",
+            quantidade=1,
+            total=total,
+            detalhe=f"{dados.get('totalItens') or 0} item(ns)",
+        )
+
+        for item in dados.get("itens") or []:
+            if not isinstance(item, dict):
+                continue
+
+            quantidade = obter_quantidade_item(item)
+            subtotal = obter_numero_seguro(
+                item.get("valorTotalItem") or item.get("subtotal")
+            )
+            total_itens += quantidade
+
+            somar_ranking(
+                materiais_quantidade,
+                f"{item.get('codigo') or '-'} - {item.get('descricao') or 'Material'}",
+                quantidade=quantidade,
+                total=subtotal,
+                detalhe=item.get("almoxarifado") or "",
+            )
+            somar_ranking(
+                almoxarifados_quantidade,
+                item.get("almoxarifado") or "Nao informado",
+                quantidade=quantidade,
+                total=subtotal,
+            )
+
+        recentes.append(
+            {
+                "id": snapshot.id,
+                "glpi": glpi,
+                "usuarioNome": nome_usuario,
+                "totalEstimado": total,
+                "criadoEm": dados.get("criadoEm"),
+                "dataLocal": dados.get("dataLocal") or "",
+            }
+        )
+
+    recentes = sorted(
+        recentes,
+        key=lambda item: obter_data_ordenacao_solicitacao(item),
+        reverse=True,
+    )[:5]
+
+    materiais_top = obter_top_ranking(
+        materiais_quantidade,
+        "quantidade",
+        1,
+    )
+
+    resumo = {
+        "totalSolicitacoes": total_solicitacoes,
+        "aguardando": aguardando,
+        "vinculadas": vinculadas,
+        "totalItens": total_itens,
+        "totalEstimado": total_estimado,
+        "totalUsuarios": len(usuarios),
+        "totalGlpis": len(glpis),
+        "totalRequisicoes": len(requisicoes),
+        "ticketMedio": (
+            total_estimado / total_solicitacoes
+            if total_solicitacoes
+            else 0
+        ),
+        "itemMaisSolicitado": (
+            materiais_top[0]["label"]
+            if materiais_top
+            else "Sem item"
+        ),
+        "usuariosPorSolicitacoes": obter_top_ranking(
+            usuarios_quantidade,
+            "quantidade",
+        ),
+        "usuariosPorValor": obter_top_ranking(
+            usuarios_valor,
+            "total",
+        ),
+        "glpisPorValor": obter_top_ranking(
+            glpis_valor,
+            "total",
+        ),
+        "requisicoesPorValor": obter_top_ranking(
+            requisicoes_valor,
+            "total",
+        ),
+        "materiaisPorQuantidade": obter_top_ranking(
+            materiais_quantidade,
+            "quantidade",
+        ),
+        "almoxarifadosPorQuantidade": obter_top_ranking(
+            almoxarifados_quantidade,
+            "quantidade",
+        ),
+        "recentes": recentes,
+        "atualizadoEm": timestamp_servidor(dry_run),
+        "origem": "importar_firebase",
+    }
+
+    db.collection("resumosAdmin").document("dashboardGeral").set(
+        resumo,
+        merge=True,
+    )
+
+    print("Resumo admin recalculado: resumosAdmin/dashboardGeral")
+
+
 # =========================
 # EXECUCAO
 # =========================
@@ -1092,6 +1382,12 @@ def montar_parser():
         help="Importa GLPI x requisicao sem atualizar a colecao solicitacoes.",
     )
 
+    parser.add_argument(
+        "--nao-atualizar-resumo-admin",
+        action="store_true",
+        help="Nao recalcula o documento agregado resumosAdmin/dashboardGeral.",
+    )
+
     return parser
 
 
@@ -1143,6 +1439,13 @@ def main():
                 mapa,
                 args.dry_run,
             )
+
+    if not args.nao_atualizar_resumo_admin:
+        print("\nResumo admin")
+        recalcular_resumo_admin(
+            db,
+            args.dry_run,
+        )
 
     print("\n==============================")
     print("PROCESSO FINALIZADO")

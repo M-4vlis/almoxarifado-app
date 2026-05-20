@@ -59,6 +59,11 @@ service cloud.firestore {
       allow create, update, delete: if ehAdmin();
     }
 
+    match /resumosAdmin/{resumoId} {
+      allow read: if ehAdmin();
+      allow create, update, delete: if ehAdmin();
+    }
+
     match /configuracoes/{document=**} {
       allow read, write: if ehAdmin();
     }

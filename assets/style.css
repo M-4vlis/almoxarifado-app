@@ -1762,6 +1762,56 @@ body.light-mode .login-footer {
 
 }
 
+.btn-carregar-mais {
+
+    width:
+        100%;
+
+    min-height:
+        48px;
+
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    gap:
+        10px;
+
+    border:
+        1px solid var(--card-border);
+
+    border-radius:
+        16px;
+
+    background:
+        var(--card);
+
+    color:
+        var(--text);
+
+    font-weight:
+        700;
+
+    cursor:
+        pointer;
+
+}
+
+.btn-carregar-mais:disabled {
+
+    opacity:
+        0.7;
+
+    cursor:
+        wait;
+
+}
+
 .home-section,
 .home-admin-filtros {
 

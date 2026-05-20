@@ -3,7 +3,8 @@ import {
     logoutFirebase,
     listarMateriaisFirebase,
     salvarSolicitacaoFirebase,
-    listarSolicitacoesPorPerfilFirebase
+    listarSolicitacoesPorPerfilFirebase,
+    buscarResumoAdminFirebase
 } from "./firebase.js"
 
 let materiais = []
@@ -19,6 +20,19 @@ let solicitacoesCarregadas = []
 let appJaIniciado = false
 let telaAtual = "inicio"
 let eventosTelasConfigurados = false
+let ultimoDocumentoSolicitacoes = null
+let existeMaisSolicitacoes = false
+let carregandoSolicitacoes = false
+let resumoAdminDashboard = null
+
+const LIMITE_SOLICITACOES =
+    20
+
+const CHAVE_CACHE_MATERIAIS =
+    "materiaisCacheLocal"
+
+const TEMPO_CACHE_MATERIAIS =
+    12 * 60 * 60 * 1000
 
 // =========================
 // LOGIN
@@ -911,7 +925,21 @@ function configurarEventosTelas() {
 
         campo.addEventListener(
             evento,
-            atualizarDashboardInicio
+            async () => {
+
+                if (
+                    usuarioEhAdmin() &&
+                    existemFiltrosDashboardAdminAtivos() &&
+                    solicitacoesCarregadas.length === 0
+                ) {
+
+                    await carregarSolicitacoesUsuario(false)
+
+                }
+
+                atualizarDashboardInicio()
+
+            }
         )
 
     })
@@ -1000,7 +1028,23 @@ async function mostrarTela(nomeTela) {
 
     if (telaEscolhida === "inicio") {
 
-        await carregarSolicitacoesUsuario(false)
+        if (usuarioEhAdmin()) {
+
+            await carregarResumoAdminDashboard()
+
+            if (!resumoAdminDashboard) {
+
+                await carregarSolicitacoesUsuario(false)
+
+            }
+
+        }
+
+        else {
+
+            await carregarSolicitacoesUsuario(false)
+
+        }
 
         atualizarDashboardInicio()
 
@@ -1060,7 +1104,7 @@ function atualizarDashboardInicio() {
 
     const listaDashboard =
         admin
-            ? obterSolicitacoesDashboardAdmin()
+            ? obterDadosDashboardAdmin()
             : [...solicitacoesCarregadas]
 
     renderizarResumoDashboard(
@@ -1070,7 +1114,17 @@ function atualizarDashboardInicio() {
 
     if (admin) {
 
-        renderizarRankingsAdmin(listaDashboard)
+        if (resumoAdminDashboard && !existemFiltrosDashboardAdminAtivos()) {
+
+            renderizarRankingsAdminResumo(resumoAdminDashboard)
+
+        }
+
+        else {
+
+            renderizarRankingsAdmin(listaDashboard)
+
+        }
 
     }
 
@@ -1511,7 +1565,7 @@ function criarCardResumoDashboard(opcao) {
 
 }
 
-function renderizarResumoDashboard(lista, admin) {
+function renderizarResumoDashboard(dadosDashboard, admin) {
 
     const container =
         document.getElementById("homeResumoDashboard")
@@ -1523,7 +1577,30 @@ function renderizarResumoDashboard(lista, admin) {
     }
 
     const resumo =
-        obterResumoDashboard(lista)
+        Array.isArray(dadosDashboard)
+            ? obterResumoDashboard(dadosDashboard)
+            : {
+                totalSolicitacoes:
+                    Number(dadosDashboard?.totalSolicitacoes || 0),
+                aguardando:
+                    Number(dadosDashboard?.aguardando || 0),
+                vinculadas:
+                    Number(dadosDashboard?.vinculadas || 0),
+                totalItens:
+                    Number(dadosDashboard?.totalItens || 0),
+                totalEstimado:
+                    Number(dadosDashboard?.totalEstimado || 0),
+                totalUsuarios:
+                    Number(dadosDashboard?.totalUsuarios || 0),
+                totalGlpis:
+                    Number(dadosDashboard?.totalGlpis || 0),
+                totalRequisicoes:
+                    Number(dadosDashboard?.totalRequisicoes || 0),
+                ticketMedio:
+                    Number(dadosDashboard?.ticketMedio || 0),
+                itemMaisSolicitado:
+                    dadosDashboard?.itemMaisSolicitado || "Sem item"
+            }
 
     const cards = [
         {
@@ -1701,6 +1778,70 @@ function obterFiltrosDashboardAdmin() {
                 .getElementById("homeFiltroMaterial")
                 ?.value
                 ?.trim() || ""
+
+    }
+
+}
+
+function existemFiltrosDashboardAdminAtivos() {
+
+    const filtros =
+        obterFiltrosDashboardAdmin()
+
+    return Object.values(filtros)
+        .some(valor => {
+
+            return Boolean(String(valor || "").trim())
+
+        })
+
+}
+
+function obterDadosDashboardAdmin() {
+
+    if (resumoAdminDashboard && !existemFiltrosDashboardAdminAtivos()) {
+
+        return resumoAdminDashboard
+
+    }
+
+    return obterSolicitacoesDashboardAdmin()
+
+}
+
+async function carregarResumoAdminDashboard() {
+
+    if (!usuarioEhAdmin()) {
+
+        resumoAdminDashboard =
+            null
+
+        return
+
+    }
+
+    if (resumoAdminDashboard) {
+
+        return
+
+    }
+
+    try {
+
+        resumoAdminDashboard =
+            await buscarResumoAdminFirebase()
+
+    }
+
+    catch (erro) {
+
+        console.warn(
+            "Nao foi possivel carregar resumo admin:",
+            erro
+        )
+
+        resumoAdminDashboard =
+            null
 
     }
 
@@ -2195,6 +2336,114 @@ function renderizarRankingsAdmin(lista) {
 
 }
 
+function renderizarRankingsAdminResumo(resumo) {
+
+    const container =
+        document.getElementById("homeAdminRankings")
+
+    if (!container) {
+
+        return
+
+    }
+
+    const recentes =
+        Array.isArray(resumo?.recentes)
+            ? resumo.recentes
+            : []
+
+    const recentesHtml =
+        recentes
+            .map(solicitacao => {
+
+                const total =
+                    formatarMoeda(
+                        solicitacao.totalEstimado ||
+                        solicitacao.valorTotalEstimado
+                    ) || "R$ 0,00"
+
+                return `
+                    <li>
+                        <div>
+                            <span>GLPI ${escaparHtml(solicitacao.glpi || "-")}</span>
+                            <small>${escaparHtml(solicitacao.usuarioNome || "Nao informado")}</small>
+                        </div>
+
+                        <strong>${escaparHtml(total)}</strong>
+                    </li>
+                `
+
+            })
+            .join("") || `
+                <li class="ranking-empty">
+                    Nenhuma solicitacao recente.
+                </li>
+            `
+
+    container.innerHTML = `
+        <div class="section-header-simple">
+            <span>Rankings</span>
+            <h2>Principais indicadores</h2>
+        </div>
+
+        <div class="ranking-grid">
+            ${renderizarListaRanking(
+                "Usuarios por solicitacoes",
+                "fa-solid fa-users",
+                resumo?.usuariosPorSolicitacoes || [],
+                "quantidade"
+            )}
+
+            ${renderizarListaRanking(
+                "Usuarios por valor",
+                "fa-solid fa-coins",
+                resumo?.usuariosPorValor || [],
+                "moeda"
+            )}
+
+            ${renderizarListaRanking(
+                "GLPIs por valor",
+                "fa-solid fa-ticket",
+                resumo?.glpisPorValor || [],
+                "moeda"
+            )}
+
+            ${renderizarListaRanking(
+                "Requisicoes por valor",
+                "fa-solid fa-file-invoice",
+                resumo?.requisicoesPorValor || [],
+                "moeda"
+            )}
+
+            ${renderizarListaRanking(
+                "Materiais solicitados",
+                "fa-solid fa-box",
+                resumo?.materiaisPorQuantidade || [],
+                "quantidade"
+            )}
+
+            ${renderizarListaRanking(
+                "Distribuicao por almoxarifado",
+                "fa-solid fa-warehouse",
+                resumo?.almoxarifadosPorQuantidade || [],
+                "quantidade"
+            )}
+
+            <div class="ranking-card ranking-card-wide">
+                <div class="ranking-card-header">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <h3>Solicitacoes recentes</h3>
+                </div>
+
+                <ul>
+                    ${recentesHtml}
+                </ul>
+            </div>
+        </div>
+    `
+
+}
+
 function renderizarSolicitacoesRecentes(lista = solicitacoesCarregadas) {
 
     const container =
@@ -2645,6 +2894,107 @@ async function carregarMateriaisJsonLocal() {
 
 }
 
+function carregarMateriaisCacheLocal() {
+
+    try {
+
+        const cache =
+            JSON.parse(
+                localStorage.getItem(CHAVE_CACHE_MATERIAIS) || "null"
+            )
+
+        if (!cache || !Array.isArray(cache.materiais)) {
+
+            return null
+
+        }
+
+        const cacheAindaValido =
+            Date.now() - Number(cache.salvoEm || 0) < TEMPO_CACHE_MATERIAIS
+
+        if (!cacheAindaValido) {
+
+            return null
+
+        }
+
+        return cache.materiais
+
+    }
+
+    catch (erro) {
+
+        localStorage.removeItem(CHAVE_CACHE_MATERIAIS)
+
+        return null
+
+    }
+
+}
+
+function salvarMateriaisCacheLocal(lista) {
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+
+        return
+
+    }
+
+    try {
+
+        localStorage.setItem(
+            CHAVE_CACHE_MATERIAIS,
+            JSON.stringify({
+                salvoEm:
+                    Date.now(),
+                materiais:
+                    lista
+            })
+        )
+
+    }
+
+    catch (erro) {
+
+        console.warn(
+            "Nao foi possivel salvar cache local de materiais:",
+            erro
+        )
+
+    }
+
+}
+
+function prepararBuscaMateriais() {
+
+    fuse = new Fuse(materiais, {
+
+        includeScore: true,
+
+        threshold: 0.3,
+
+        ignoreLocation: true,
+
+        minMatchCharLength: 2,
+
+        keys: [
+
+            {
+                name: "descricao",
+                weight: 0.8
+            },
+
+            {
+                name: "codigo",
+                weight: 0.2
+            }
+
+        ]
+
+    })
+
+}
+
 async function carregarMateriais() {
 
     try {
@@ -2656,12 +3006,14 @@ async function carregarMateriais() {
         }
 
         materiais =
-            await listarMateriaisFirebase()
+            carregarMateriaisCacheLocal()
 
         if (!materiais || materiais.length === 0) {
 
             materiais =
                 await carregarMateriaisJsonLocal()
+
+            salvarMateriaisCacheLocal(materiais)
 
         }
 
@@ -2670,84 +3022,38 @@ async function carregarMateriais() {
             materiais.length
         )
 
-        fuse = new Fuse(materiais, {
-
-            includeScore: true,
-
-            threshold: 0.3,
-
-            ignoreLocation: true,
-
-            minMatchCharLength: 2,
-
-            keys: [
-
-                {
-                    name: "descricao",
-                    weight: 0.8
-                },
-
-                {
-                    name: "codigo",
-                    weight: 0.2
-                }
-
-            ]
-
-        })
+        prepararBuscaMateriais()
 
     }
 
     catch (erro) {
 
         console.error(
-            "Erro ao carregar materiais do Firebase:",
+            "Erro ao carregar materiais do JSON local/cache:",
             erro
         )
 
         try {
 
             materiais =
-                await carregarMateriaisJsonLocal()
+                await listarMateriaisFirebase()
 
             console.log(
-                "Materiais carregados do JSON local:",
+                "Materiais carregados do Firebase:",
                 materiais.length
             )
 
-            fuse = new Fuse(materiais, {
+            salvarMateriaisCacheLocal(materiais)
 
-                includeScore: true,
-
-                threshold: 0.3,
-
-                ignoreLocation: true,
-
-                minMatchCharLength: 2,
-
-                keys: [
-
-                    {
-                        name: "descricao",
-                        weight: 0.8
-                    },
-
-                    {
-                        name: "codigo",
-                        weight: 0.2
-                    }
-
-                ]
-
-            })
+            prepararBuscaMateriais()
 
         }
 
-        catch (erroJson) {
+        catch (erroFirebase) {
 
             console.error(
-                "Erro ao carregar materiais do JSON local:",
-                erroJson
+                "Erro ao carregar materiais do Firebase:",
+                erroFirebase
             )
 
         }
@@ -3625,6 +3931,7 @@ if (btnEnviarWhatsapp) {
                 limparDadosAposEnvio()
 
                 solicitacoesCarregadas = []
+                resumoAdminDashboard = null
 
                 mostrarToast(
                     "Solicitação salva e enviada"
@@ -3632,7 +3939,23 @@ if (btnEnviarWhatsapp) {
 
                 if (telaAtual === "inicio") {
 
-                    await carregarSolicitacoesUsuario(false)
+                    if (usuarioEhAdmin()) {
+
+                        await carregarResumoAdminDashboard()
+
+                        if (!resumoAdminDashboard) {
+
+                            await carregarSolicitacoesUsuario(false)
+
+                        }
+
+                    }
+
+                    else {
+
+                        await carregarSolicitacoesUsuario(false)
+
+                    }
 
                     atualizarDashboardInicio()
 
@@ -3759,7 +4082,7 @@ function atualizarFiltrosAdminSolicitacoes() {
 
 }
 
-async function carregarSolicitacoesUsuario(renderizarTela) {
+async function carregarSolicitacoesUsuario(renderizarTela, carregarMais = false) {
 
     const usuario =
         obterSessaoUsuario()
@@ -3772,7 +4095,26 @@ async function carregarSolicitacoesUsuario(renderizarTela) {
 
     atualizarFiltrosAdminSolicitacoes()
 
-    if (renderizarTela) {
+    if (carregandoSolicitacoes) {
+
+        return
+
+    }
+
+    carregandoSolicitacoes =
+        true
+
+    if (!carregarMais) {
+
+        ultimoDocumentoSolicitacoes =
+            null
+
+        existeMaisSolicitacoes =
+            false
+
+    }
+
+    if (renderizarTela && !carregarMais) {
 
         const container =
             obterContainerSolicitacoes()
@@ -3795,8 +4137,32 @@ async function carregarSolicitacoesUsuario(renderizarTela) {
 
     try {
 
+        const resultado =
+            await listarSolicitacoesPorPerfilFirebase(
+                usuario,
+                {
+                    limite:
+                        LIMITE_SOLICITACOES,
+                    cursor:
+                        carregarMais
+                            ? ultimoDocumentoSolicitacoes
+                            : null
+                }
+            )
+
         solicitacoesCarregadas =
-            await listarSolicitacoesPorPerfilFirebase(usuario)
+            carregarMais
+                ? [
+                    ...solicitacoesCarregadas,
+                    ...resultado.solicitacoes
+                ]
+                : resultado.solicitacoes
+
+        ultimoDocumentoSolicitacoes =
+            resultado.ultimoDocumento || null
+
+        existeMaisSolicitacoes =
+            resultado.temMais === true
 
         if (renderizarTela) {
 
@@ -3833,6 +4199,13 @@ async function carregarSolicitacoesUsuario(renderizarTela) {
             }
 
         }
+
+    }
+
+    finally {
+
+        carregandoSolicitacoes =
+            false
 
     }
 
@@ -4672,6 +5045,46 @@ function renderizarSolicitacoes() {
         container.appendChild(card)
 
     })
+
+    if (existeMaisSolicitacoes) {
+
+        const botaoMais =
+            document.createElement("button")
+
+        botaoMais.type =
+            "button"
+
+        botaoMais.className =
+            "btn-carregar-mais"
+
+        botaoMais.innerHTML = `
+            <i class="fa-solid fa-chevron-down"></i>
+            <span>Carregar mais</span>
+        `
+
+        botaoMais.addEventListener(
+            "click",
+            async () => {
+
+                botaoMais.disabled =
+                    true
+
+                botaoMais.innerHTML = `
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <span>Carregando...</span>
+                `
+
+                await carregarSolicitacoesUsuario(
+                    true,
+                    true
+                )
+
+            }
+        )
+
+        container.appendChild(botaoMais)
+
+    }
 
 }
 
