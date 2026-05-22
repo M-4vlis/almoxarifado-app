@@ -5309,15 +5309,35 @@ function buscarMateriais() {
 
     }
 
+    const campoBuscaAtual =
+        document.getElementById("busca")
+
+    const selectAlmoxarifadoAtual =
+        document.getElementById("almoxarifado")
+
+    const divResultadosAtual =
+        document.getElementById("resultados")
+
+    if (
+        !campoBuscaAtual ||
+        !selectAlmoxarifadoAtual ||
+        !divResultadosAtual
+    ) {
+
+        return
+
+    }
+
     const textoBusca =
-        campoBusca.value
-            .toLowerCase()
+        normalizarBusca(
+            campoBuscaAtual.value
+        )
             .trim()
 
     const almoxarifadoSelecionado =
-        selectAlmoxarifado.value
+        selectAlmoxarifadoAtual.value
 
-    divResultados.innerHTML = ""
+    divResultadosAtual.innerHTML = ""
 
     if (textoBusca.length < 2) {
 
@@ -5335,7 +5355,7 @@ function buscarMateriais() {
         resultados =
             materiais.filter(material => {
 
-                return material.codigo
+                return String(material.codigo || "")
                     .toLowerCase()
                     .includes(textoBusca)
 
@@ -5444,7 +5464,7 @@ function buscarMateriais() {
 
     if (materiaisUnicos.length === 0) {
 
-        divResultados.innerHTML = `
+        divResultadosAtual.innerHTML = `
             <div class="empty-state">
                 <i class="fa-regular fa-face-frown"></i>
 
@@ -5518,7 +5538,7 @@ function buscarMateriais() {
             () => abrirModal(material)
         )
 
-        divResultados.appendChild(div)
+        divResultadosAtual.appendChild(div)
 
     })
 
@@ -5526,10 +5546,27 @@ function buscarMateriais() {
 
 if (campoBusca) {
 
-    campoBusca.addEventListener(
+    ;[
         "input",
-        buscarMateriais
-    )
+        "keyup",
+        "change",
+        "search",
+        "paste"
+    ].forEach(evento => {
+
+        campoBusca.addEventListener(
+            evento,
+            () => {
+
+                setTimeout(
+                    buscarMateriais,
+                    0
+                )
+
+            }
+        )
+
+    })
 
 }
 

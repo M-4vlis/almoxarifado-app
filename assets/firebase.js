@@ -1003,6 +1003,11 @@ async function executarConsultaSolicitacoes(filtrosBase, opcoes = {}) {
     const limite =
         Number(opcoes.limite || 20)
 
+    const limiteConsulta =
+        opcoes.ordenar === false
+            ? Math.max(limite, 100)
+            : limite
+
     const cursor =
         opcoes.cursor || null
 
@@ -1010,14 +1015,21 @@ async function executarConsultaSolicitacoes(filtrosBase, opcoes = {}) {
         collection(db, "solicitacoes")
 
     const filtros = [
-        ...filtrosBase,
-        orderBy(
-            "criadoEm",
-            "desc"
-        )
+        ...filtrosBase
     ]
 
-    if (cursor) {
+    if (opcoes.ordenar !== false) {
+
+        filtros.push(
+            orderBy(
+                "criadoEm",
+                "desc"
+            )
+        )
+
+    }
+
+    if (cursor && opcoes.ordenar !== false) {
 
         filtros.push(
             startAfter(cursor)
@@ -1026,7 +1038,7 @@ async function executarConsultaSolicitacoes(filtrosBase, opcoes = {}) {
     }
 
     filtros.push(
-        limit(limite + 1)
+        limit(limiteConsulta + 1)
     )
 
     const consulta =
@@ -1042,10 +1054,10 @@ async function executarConsultaSolicitacoes(filtrosBase, opcoes = {}) {
         snapshot.docs
 
     const temMais =
-        documentos.length > limite
+        documentos.length > limiteConsulta
 
     const documentosPagina =
-        documentos.slice(0, limite)
+        documentos.slice(0, limiteConsulta)
 
     const solicitacoes =
         documentosPagina.map(documento => {
@@ -1108,7 +1120,9 @@ async function executarConsultaSolicitacoesSegura(chave, filtros, opcoes) {
                 filtros,
                 {
                     ...opcoes,
-                    cursor
+                    cursor,
+                    ordenar:
+                        false
                 }
             ))
         }
@@ -1296,8 +1310,7 @@ async function listarMinhasSolicitacoesFirebase(usuarioOuUid, opcoes = {}) {
                 cursores
             },
         temMais:
-            documentosOrdenados.length > limite ||
-            resultados.some(resultado => resultado.temMais)
+            false
     }
 
 }
