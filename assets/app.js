@@ -24,9 +24,14 @@ let ultimoDocumentoSolicitacoes = null
 let existeMaisSolicitacoes = false
 let carregandoSolicitacoes = false
 let resumoAdminDashboard = null
+let chaveCacheSolicitacoes = ""
+let solicitacoesCarregadasEm = 0
 
 const LIMITE_SOLICITACOES =
     20
+
+const TEMPO_CACHE_SOLICITACOES =
+    2 * 60 * 1000
 
 const CHAVE_CACHE_MATERIAIS =
     "materiaisCacheLocal"
@@ -950,7 +955,14 @@ function configurarEventosTelas() {
             "click",
             async () => {
 
-                await carregarSolicitacoesUsuario(true)
+                await carregarSolicitacoesUsuario(
+                    true,
+                    false,
+                    {
+                        forcar:
+                            true
+                    }
+                )
 
             }
         )
@@ -1286,6 +1298,23 @@ function obterValorUnitarioTextoMaterial(material) {
 
 }
 
+function normalizarAlmoxarifadoChave(valor) {
+
+    return String(valor || "")
+        .trim()
+        .toUpperCase()
+
+}
+
+function obterChaveItemSolicitacao(item) {
+
+    return [
+        String(item?.codigo || "").trim(),
+        normalizarAlmoxarifadoChave(item?.almoxarifado)
+    ].join("||")
+
+}
+
 function buscarMaterialPorItem(item) {
 
     const codigo =
@@ -1349,6 +1378,7 @@ function obterValorUnitarioItem(item) {
 
     const subtotal =
         normalizarNumeroMonetario(
+            item?.valorTotal ||
             item?.subtotal ||
             item?.valorTotalItem
         )
@@ -1378,6 +1408,7 @@ function calcularSubtotalItem(item) {
     }
 
     return normalizarNumeroMonetario(
+        item?.valorTotal ||
         item?.subtotal ||
         item?.valorTotalItem
     )
@@ -1385,15 +1416,6 @@ function calcularSubtotalItem(item) {
 }
 
 function calcularTotalSolicitacao(solicitacao) {
-
-    const valorTotal =
-        normalizarNumeroMonetario(solicitacao?.valorTotal)
-
-    if (valorTotal > 0) {
-
-        return valorTotal
-
-    }
 
     const totalItens =
         (solicitacao?.itens || [])
@@ -1413,6 +1435,7 @@ function calcularTotalSolicitacao(solicitacao) {
     }
 
     return normalizarNumeroMonetario(
+        solicitacao?.valorTotal ||
         solicitacao?.valorTotalEstimado ||
         solicitacao?.totalEstimado
     )
@@ -1455,6 +1478,9 @@ function recalcularItemSolicitacao(item) {
         valorUnitarioNumero
 
     item.valorTotalItem =
+        valorTotalItem
+
+    item.valorTotal =
         valorTotalItem
 
     item.subtotal =
@@ -2997,6 +3023,11 @@ async function sairDoSistema() {
     limparSessaoUsuario()
 
     solicitacoesCarregadas = []
+    ultimoDocumentoSolicitacoes = null
+    existeMaisSolicitacoes = false
+    chaveCacheSolicitacoes = ""
+    solicitacoesCarregadasEm = 0
+    resumoAdminDashboard = null
 
     if (campoBusca) {
 
@@ -3401,7 +3432,8 @@ if (btnAdicionarLista) {
             const itemExistente =
                 listaSolicitacao.find(item => {
 
-                    return item.codigo === materialSelecionado.codigo
+                    return obterChaveItemSolicitacao(item) ===
+                        obterChaveItemSolicitacao(materialSelecionado)
 
                 })
 
@@ -3580,6 +3612,11 @@ function renderizarCarrinho() {
         const div =
             document.createElement("div")
 
+        const chaveItem =
+            encodeURIComponent(
+                obterChaveItemSolicitacao(item)
+            )
+
         div.classList.add(
             "item-carrinho"
         )
@@ -3597,7 +3634,7 @@ function renderizarCarrinho() {
                 <div class="controle-quantidade">
                     <button
                         class="btn-qtd"
-                        onclick="diminuirQuantidade('${escaparHtml(item.codigo)}')"
+                        onclick="diminuirQuantidade('${chaveItem}')"
                     >
                         -
                     </button>
@@ -3608,7 +3645,7 @@ function renderizarCarrinho() {
 
                     <button
                         class="btn-qtd"
-                        onclick="aumentarQuantidade('${escaparHtml(item.codigo)}')"
+                        onclick="aumentarQuantidade('${chaveItem}')"
                     >
                         +
                     </button>
@@ -3616,7 +3653,7 @@ function renderizarCarrinho() {
 
                 <button
                     class="btn-remover"
-                    onclick="removerItem('${escaparHtml(item.codigo)}')"
+                    onclick="removerItem('${chaveItem}')"
                 >
                     <i class="fa-solid fa-trash"></i>
                 </button>
@@ -3629,12 +3666,31 @@ function renderizarCarrinho() {
 
 }
 
-function aumentarQuantidade(codigo) {
+function obterChaveAcaoCarrinho(chaveCodificada) {
+
+    try {
+
+        return decodeURIComponent(chaveCodificada)
+
+    }
+
+    catch (erro) {
+
+        return String(chaveCodificada || "")
+
+    }
+
+}
+
+function aumentarQuantidade(chaveCodificada) {
+
+    const chave =
+        obterChaveAcaoCarrinho(chaveCodificada)
 
     const item =
         listaSolicitacao.find(item => {
 
-            return item.codigo === codigo
+            return obterChaveItemSolicitacao(item) === chave
 
         })
 
@@ -3651,12 +3707,15 @@ function aumentarQuantidade(codigo) {
 
 }
 
-function diminuirQuantidade(codigo) {
+function diminuirQuantidade(chaveCodificada) {
+
+    const chave =
+        obterChaveAcaoCarrinho(chaveCodificada)
 
     const item =
         listaSolicitacao.find(item => {
 
-            return item.codigo === codigo
+            return obterChaveItemSolicitacao(item) === chave
 
         })
 
@@ -3671,7 +3730,7 @@ function diminuirQuantidade(codigo) {
 
     if (item.quantidade <= 0) {
 
-        removerItem(codigo)
+        removerItem(chaveCodificada)
 
         return
 
@@ -3683,12 +3742,15 @@ function diminuirQuantidade(codigo) {
 
 }
 
-function removerItem(codigo) {
+function removerItem(chaveCodificada) {
+
+    const chave =
+        obterChaveAcaoCarrinho(chaveCodificada)
 
     listaSolicitacao =
         listaSolicitacao.filter(item => {
 
-            return item.codigo !== codigo
+            return obterChaveItemSolicitacao(item) !== chave
 
         })
 
@@ -3861,6 +3923,9 @@ function montarDadosSolicitacaoFirebase(dadosFormulario) {
 
                 valorTotalItem:
                     itemCalculado.valorTotalItem,
+
+                valorTotal:
+                    itemCalculado.valorTotal,
 
                 subtotal:
                     itemCalculado.subtotal
@@ -4087,6 +4152,10 @@ if (btnEnviarWhatsapp) {
                 limparDadosAposEnvio()
 
                 solicitacoesCarregadas = []
+                ultimoDocumentoSolicitacoes = null
+                existeMaisSolicitacoes = false
+                chaveCacheSolicitacoes = ""
+                solicitacoesCarregadasEm = 0
                 resumoAdminDashboard = null
 
                 mostrarToast(
@@ -4238,7 +4307,35 @@ function atualizarFiltrosAdminSolicitacoes() {
 
 }
 
-async function carregarSolicitacoesUsuario(renderizarTela, carregarMais = false) {
+function obterChaveCacheSolicitacoes(usuario) {
+
+    return [
+        usuario?.uid || "",
+        usuario?.matricula || "",
+        usuario?.perfil || "usuario"
+    ].join("|")
+
+}
+
+function cacheSolicitacoesValido(usuario) {
+
+    if (!solicitacoesCarregadas.length) {
+
+        return false
+
+    }
+
+    if (chaveCacheSolicitacoes !== obterChaveCacheSolicitacoes(usuario)) {
+
+        return false
+
+    }
+
+    return Date.now() - solicitacoesCarregadasEm < TEMPO_CACHE_SOLICITACOES
+
+}
+
+async function carregarSolicitacoesUsuario(renderizarTela, carregarMais = false, opcoes = {}) {
 
     const usuario =
         obterSessaoUsuario()
@@ -4252,6 +4349,22 @@ async function carregarSolicitacoesUsuario(renderizarTela, carregarMais = false)
     atualizarFiltrosAdminSolicitacoes()
 
     if (carregandoSolicitacoes) {
+
+        return
+
+    }
+
+    if (
+        !carregarMais &&
+        !opcoes.forcar &&
+        cacheSolicitacoesValido(usuario)
+    ) {
+
+        if (renderizarTela) {
+
+            renderizarSolicitacoes()
+
+        }
 
         return
 
@@ -4319,6 +4432,12 @@ async function carregarSolicitacoesUsuario(renderizarTela, carregarMais = false)
 
         existeMaisSolicitacoes =
             resultado.temMais === true
+
+        chaveCacheSolicitacoes =
+            obterChaveCacheSolicitacoes(usuario)
+
+        solicitacoesCarregadasEm =
+            Date.now()
 
         if (renderizarTela) {
 
@@ -4821,13 +4940,13 @@ function gerarRelatorioSolicitacoes() {
         "Matricula retirada",
         "Local de uso",
         "Total itens",
-        "Total estimado",
+        "Valor total solicitacao",
         "Codigo material",
         "Descricao material",
         "Almoxarifado",
         "Quantidade",
         "Valor unitario",
-        "Subtotal"
+        "Valor total item"
     ]
 
     const linhas = []
@@ -5279,21 +5398,24 @@ function buscarMateriais() {
     })
 
     const materiaisUnicos = []
-    const codigosJaAdicionados = new Set()
+    const chavesJaAdicionadas = new Set()
 
     resultados.forEach(material => {
 
+        const chaveMaterial =
+            obterChaveItemSolicitacao(material)
+
         if (
             !material.disponivel &&
-            codigosJaAdicionados.has(material.codigo)
+            chavesJaAdicionadas.has(chaveMaterial)
         ) {
 
             return
 
         }
 
-        codigosJaAdicionados.add(
-            material.codigo
+        chavesJaAdicionadas.add(
+            chaveMaterial
         )
 
         materiaisUnicos.push(material)

@@ -400,6 +400,7 @@ def ler_materiais():
     confirmar_arquivo(ARQUIVO_MATERIAIS)
 
     materiais_dict = {}
+    duplicados_mesmo_almoxarifado = 0
 
     for aba in ABAS_MATERIAIS:
         df = pd.read_excel(
@@ -522,11 +523,18 @@ def ler_materiais():
                 "valorUnitarioNumero": valor_unitario["valorUnitarioNumero"],
                 "ativo": True,
                 "origem": "planilha_materiais",
+                "chaveMaterial": doc_id,
+                "linhasAgrupadas": 1,
             }
 
             if not material_existente:
                 materiais_dict[doc_id] = dados
                 continue
+
+            duplicados_mesmo_almoxarifado += 1
+            material_existente["linhasAgrupadas"] = (
+                int(material_existente.get("linhasAgrupadas") or 1) + 1
+            )
 
             if estoque > float(material_existente.get("estoque") or 0):
                 material_existente["estoque"] = estoque
@@ -546,8 +554,16 @@ def ler_materiais():
                 valor_unitario["valorUnitarioNumero"] > 0 and
                 valor_unitario["valorUnitarioNumero"] > valor_existente
             ):
+                # Regra para duplicados no mesmo codigo + almoxarifado:
+                # valores invalidos/zero sao ignorados e fica o maior valor valido.
                 material_existente["valorUnitario"] = valor_unitario["valorUnitario"]
                 material_existente["valorUnitarioNumero"] = valor_unitario["valorUnitarioNumero"]
+
+    if duplicados_mesmo_almoxarifado:
+        print(
+            "Materiais duplicados agrupados por codigo + almoxarifado: "
+            f"{duplicados_mesmo_almoxarifado}"
+        )
 
     return materiais_dict
 
@@ -1138,7 +1154,7 @@ def obter_valor_unitario_item(item, materiais_por_chave=None):
 
     quantidade = obter_numero_seguro(item.get("quantidade"))
     subtotal = obter_numero_seguro(
-        item.get("subtotal") or item.get("valorTotalItem")
+        item.get("valorTotal") or item.get("valorTotalItem") or item.get("subtotal")
     )
 
     if quantidade > 0 and subtotal > 0:
@@ -1155,16 +1171,11 @@ def calcular_subtotal_item(item, materiais_por_chave=None):
         return quantidade * valor_unitario
 
     return obter_numero_seguro(
-        item.get("subtotal") or item.get("valorTotalItem")
+        item.get("valorTotal") or item.get("valorTotalItem") or item.get("subtotal")
     )
 
 
 def obter_total_solicitacao(dados, materiais_por_chave=None):
-    total = obter_numero_seguro(dados.get("valorTotal"))
-
-    if total > 0:
-        return total
-
     total_itens = sum(
         calcular_subtotal_item(item, materiais_por_chave)
         for item in dados.get("itens") or []
@@ -1175,7 +1186,9 @@ def obter_total_solicitacao(dados, materiais_por_chave=None):
         return total_itens
 
     return obter_numero_seguro(
-        dados.get("valorTotalEstimado") or dados.get("totalEstimado")
+        dados.get("valorTotal") or
+        dados.get("valorTotalEstimado") or
+        dados.get("totalEstimado")
     )
 
 

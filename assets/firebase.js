@@ -658,6 +658,9 @@ async function prepararItensSolicitacao(dadosSolicitacao) {
                     valorTotalItem:
                         subtotal,
 
+                    valorTotal:
+                        subtotal,
+
                     subtotal:
                         subtotal
 
@@ -794,8 +797,8 @@ function normalizarSolicitacaoFirebase(documento) {
         })
 
     const valorTotal =
-        tratarNumero(dados.valorTotal) ||
         valorTotalCalculado ||
+        tratarNumero(dados.valorTotal) ||
         tratarNumero(
             dados.valorTotalEstimado ||
             dados.totalEstimado
@@ -973,7 +976,29 @@ async function listarMateriaisFirebase() {
 // LISTAR MINHAS SOLICITAÇÕES
 // =========================
 
-async function listarMinhasSolicitacoesFirebase(usuarioUid, opcoes = {}) {
+function obterDadosUsuarioConsulta(usuarioOuUid) {
+
+    if (typeof usuarioOuUid === "string") {
+
+        return {
+            uid:
+                tratarMatricula(usuarioOuUid),
+            matricula:
+                ""
+        }
+
+    }
+
+    return {
+        uid:
+            tratarMatricula(usuarioOuUid?.uid),
+        matricula:
+            tratarMatricula(usuarioOuUid?.matricula)
+    }
+
+}
+
+async function executarConsultaSolicitacoes(filtrosBase, opcoes = {}) {
 
     const limite =
         Number(opcoes.limite || 20)
@@ -985,11 +1010,7 @@ async function listarMinhasSolicitacoesFirebase(usuarioUid, opcoes = {}) {
         collection(db, "solicitacoes")
 
     const filtros = [
-        where(
-            "usuarioUid",
-            "==",
-            usuarioUid
-        ),
+        ...filtrosBase,
         orderBy(
             "criadoEm",
             "desc"
@@ -1037,11 +1058,246 @@ async function listarMinhasSolicitacoesFirebase(usuarioUid, opcoes = {}) {
 
     return {
         solicitacoes,
+        documentosConsulta:
+            documentos,
         ultimoDocumento:
             documentosPagina.length > 0
                 ? documentosPagina[documentosPagina.length - 1]
                 : cursor,
         temMais
+    }
+
+}
+
+function obterTempoDocumentoSolicitacao(documento) {
+
+    const dados =
+        documento.data()
+
+    const criadoEm =
+        dados.criadoEm
+
+    if (criadoEm?.toMillis) {
+
+        return criadoEm.toMillis()
+
+    }
+
+    if (criadoEm?.toDate) {
+
+        return criadoEm.toDate().getTime()
+
+    }
+
+    return 0
+
+}
+
+async function executarConsultaSolicitacoesSegura(chave, filtros, opcoes) {
+
+    try {
+
+        const cursor =
+            opcoes.cursor?.tipo === "multiUsuario"
+                ? opcoes.cursor.cursores?.[chave] || null
+                : null
+
+        return {
+            chave,
+            ...(await executarConsultaSolicitacoes(
+                filtros,
+                {
+                    ...opcoes,
+                    cursor
+                }
+            ))
+        }
+
+    }
+
+    catch (erro) {
+
+        console.warn(
+            `Consulta de solicitacoes por ${chave} falhou:`,
+            erro
+        )
+
+        return {
+            chave,
+            solicitacoes:
+                [],
+            documentosConsulta:
+                [],
+            ultimoDocumento:
+                null,
+            temMais:
+                false
+        }
+
+    }
+
+}
+
+async function listarMinhasSolicitacoesFirebase(usuarioOuUid, opcoes = {}) {
+
+    const usuario =
+        obterDadosUsuarioConsulta(usuarioOuUid)
+
+    if (!usuario.uid && !usuario.matricula) {
+
+        return {
+            solicitacoes:
+                [],
+            ultimoDocumento:
+                null,
+            temMais:
+                false
+        }
+
+    }
+
+    const consultas = []
+
+    if (usuario.uid) {
+
+        consultas.push({
+            chave:
+                "uid",
+            filtros:
+                [
+                    where(
+                        "usuarioUid",
+                        "==",
+                        usuario.uid
+                    )
+                ]
+        })
+
+    }
+
+    if (usuario.matricula) {
+
+        consultas.push(
+            {
+                chave:
+                    "matricula",
+                filtros:
+                    [
+                        where(
+                            "usuarioMatricula",
+                            "==",
+                            usuario.matricula
+                        )
+                    ]
+            },
+            {
+                chave:
+                    "matriculaSolicitante",
+                filtros:
+                    [
+                        where(
+                            "usuarioSolicitante.matricula",
+                            "==",
+                            usuario.matricula
+                        )
+                    ]
+            }
+        )
+
+    }
+
+    const resultados =
+        await Promise.all(
+            consultas.map(consulta => {
+
+                return executarConsultaSolicitacoesSegura(
+                    consulta.chave,
+                    consulta.filtros,
+                    opcoes
+                )
+
+            })
+        )
+
+    const documentosPorId =
+        new Map()
+
+    resultados.forEach(resultado => {
+
+        ;(resultado.documentosConsulta || []).forEach(documento => {
+
+            if (!documentosPorId.has(documento.id)) {
+
+                documentosPorId.set(
+                    documento.id,
+                    {
+                        documento,
+                        chaves:
+                            new Set()
+                    }
+                )
+
+            }
+
+            documentosPorId.get(documento.id).chaves.add(
+                resultado.chave
+            )
+
+        })
+
+    })
+
+    const documentosOrdenados =
+        Array.from(documentosPorId.values())
+            .sort((a, b) => {
+
+                return obterTempoDocumentoSolicitacao(b.documento) -
+                    obterTempoDocumentoSolicitacao(a.documento)
+
+            })
+
+    const limite =
+        Number(opcoes.limite || 20)
+
+    const documentosPagina =
+        documentosOrdenados.slice(0, limite)
+
+    const cursores =
+        {
+            ...(opcoes.cursor?.tipo === "multiUsuario"
+                ? opcoes.cursor.cursores || {}
+                : {})
+        }
+
+    documentosPagina.forEach(item => {
+
+        item.chaves.forEach(chave => {
+
+            cursores[chave] =
+                item.documento
+
+        })
+
+    })
+
+    return {
+        solicitacoes:
+            documentosPagina.map(item => {
+
+                return normalizarSolicitacaoFirebase(
+                    item.documento
+                )
+
+            }),
+        ultimoDocumento:
+            {
+                tipo:
+                    "multiUsuario",
+                cursores
+            },
+        temMais:
+            documentosOrdenados.length > limite ||
+            resultados.some(resultado => resultado.temMais)
     }
 
 }
@@ -1061,6 +1317,25 @@ function calcularSubtotalItem(item) {
 
 }
 
+function calcularTotalItemSalvo(item) {
+
+    const subtotalCalculado =
+        calcularSubtotalItem(item)
+
+    if (subtotalCalculado > 0) {
+
+        return subtotalCalculado
+
+    }
+
+    return normalizarNumeroMonetario(
+        item?.valorTotal ||
+        item?.valorTotalItem ||
+        item?.subtotal
+    )
+
+}
+
 function calcularTotalSolicitacao(solicitacao) {
 
     const itens =
@@ -1071,7 +1346,7 @@ function calcularTotalSolicitacao(solicitacao) {
     return itens.reduce(
         (total, item) => {
 
-            return total + calcularSubtotalItem(item)
+            return total + calcularTotalItemSalvo(item)
 
         },
         0
@@ -1161,7 +1436,14 @@ async function listarSolicitacoesPorPerfilFirebase(usuario, opcoes = {}) {
 
     if (!usuario) {
 
-        return []
+        return {
+            solicitacoes:
+                [],
+            ultimoDocumento:
+                null,
+            temMais:
+                false
+        }
 
     }
 
@@ -1172,7 +1454,7 @@ async function listarSolicitacoesPorPerfilFirebase(usuario, opcoes = {}) {
     }
 
     return await listarMinhasSolicitacoesFirebase(
-        usuario.uid,
+        usuario,
         opcoes
     )
 

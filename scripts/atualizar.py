@@ -96,14 +96,33 @@ def obter_coluna(colunas, nomes, obrigatoria=True):
 
 
 def converter_valor_brasileiro(valor):
-    if pd.isna(valor):
+    if valor is None:
         return 0
+
+    try:
+        if pd.isna(valor):
+            return 0
+    except (TypeError, ValueError):
+        pass
+
+    if isinstance(valor, (int, float)):
+        numero = float(valor)
+
+        if not math.isfinite(numero):
+            return 0
+
+        return numero
 
     if isinstance(valor, str):
         texto = valor.strip()
         texto = texto.replace("R$", "")
+        texto = texto.replace("r$", "")
         texto = texto.replace("\xa0", "")
         texto = texto.replace(" ", "")
+        texto = re.sub(r"[^0-9,.\-]", "", texto)
+
+        if texto.lower() in ["", "-", "nan", "none", "null", ".", ","]:
+            return 0
 
         if "," in texto and "." in texto:
             if texto.rfind(",") > texto.rfind("."):
@@ -115,6 +134,15 @@ def converter_valor_brasileiro(valor):
         elif "," in texto:
             texto = texto.replace(".", "")
             texto = texto.replace(",", ".")
+
+        elif texto.count(".") > 1:
+            texto = texto.replace(".", "")
+
+        elif "." in texto:
+            partes = texto.split(".")
+
+            if len(partes[-1]) == 3 and len(partes[0]) <= 3:
+                texto = texto.replace(".", "")
 
         valor = texto
 
@@ -147,6 +175,14 @@ def preparar_valor_unitario(valor):
         "valorUnitario": formatar_valor_unitario(numero),
         "valorUnitarioNumero": numero,
     }
+
+
+def normalizar_id(valor):
+    texto = str(valor or "").strip().upper()
+    texto = re.sub(r"[^A-Z0-9_-]", "_", texto)
+    texto = re.sub(r"_+", "_", texto)
+
+    return texto.strip("_")
 
 
 def formatar_valor_excel_com_zeros(celula):
@@ -372,7 +408,7 @@ def gerar_materiais_json():
                         linha[coluna_valor_unitario]
                     )
 
-            chave =                f"{codigo}_{aba}"
+            chave =                f"{codigo}_{normalizar_id(aba)}"
 
             if chave not in materiais_dict:
 
@@ -384,17 +420,31 @@ def gerar_materiais_json():
 
                     "almoxarifado": aba,
 
+                    "estoque": estoque,
+
                     "disponivel": disponivel,
 
                     "valorUnitario": valor_unitario["valorUnitario"],
 
-                    "valorUnitarioNumero": valor_unitario["valorUnitarioNumero"]
+                    "valorUnitarioNumero": valor_unitario["valorUnitarioNumero"],
+
+                    "chaveMaterial": chave,
+
+                    "linhasAgrupadas": 1
 
                 }
 
             else:
 
                 material_existente =                    materiais_dict[chave]
+
+                material_existente["linhasAgrupadas"] =                    int(
+                        material_existente.get("linhasAgrupadas") or 1
+                    ) + 1
+
+                if estoque > float(material_existente.get("estoque") or 0):
+
+                    material_existente["estoque"] =                        estoque
 
                 if disponivel:
 
@@ -411,9 +461,11 @@ def gerar_materiais_json():
                     converter_valor_brasileiro(
                         material_existente.get("valorUnitarioNumero") or
                         material_existente.get("valorUnitario")
-                    ) <= 0
+                    ) < valor_unitario["valorUnitarioNumero"]
                 ):
 
+                    # Regra para duplicados no mesmo codigo + almoxarifado:
+                    # valores invalidos/zero sao ignorados e fica o maior valor valido.
                     material_existente["valorUnitario"] =                        valor_unitario["valorUnitario"]
 
                     material_existente["valorUnitarioNumero"] =                        valor_unitario["valorUnitarioNumero"]
@@ -422,9 +474,18 @@ def gerar_materiais_json():
             materiais_dict.values()
         )
 
+    materiais_duplicados =        sum(
+            max(0, int(material.get("linhasAgrupadas") or 1) - 1)
+            for material in materiais
+        )
+
     salvar_json(
         "materiais.json",
         materiais
+    )
+
+    print(
+        f"Linhas duplicadas agrupadas por codigo + almoxarifado: {materiais_duplicados}"
     )
 
     print(

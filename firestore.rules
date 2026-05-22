@@ -23,7 +23,13 @@ service cloud.firestore {
 
     function ehDonoSolicitacao() {
       return estaLogado()
-        && resource.data.usuarioUid == request.auth.uid;
+        && (
+          resource.data.usuarioUid == request.auth.uid
+          || (
+            exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+            && resource.data.usuarioMatricula == dadosUsuario().matricula
+          )
+        );
     }
 
     function ehDonoNovaSolicitacao() {
