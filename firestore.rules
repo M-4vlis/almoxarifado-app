@@ -27,7 +27,13 @@ service cloud.firestore {
           resource.data.usuarioUid == request.auth.uid
           || (
             exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
-            && resource.data.usuarioMatricula == dadosUsuario().matricula
+            && (
+              resource.data.usuarioMatricula == dadosUsuario().matricula
+              || (
+                resource.data.usuarioSolicitante is map
+                && resource.data.usuarioSolicitante.matricula == dadosUsuario().matricula
+              )
+            )
           )
         );
     }
