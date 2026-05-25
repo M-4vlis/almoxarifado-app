@@ -3407,6 +3407,81 @@ body.light-mode option {
 
 }
 
+.materials-status {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    margin: 14px 0;
+
+    padding: 12px 14px;
+
+    border:
+        1px solid var(--card-border);
+
+    border-radius: 16px;
+
+    background:
+        rgba(20, 29, 48, 0.64);
+
+    color: var(--muted);
+
+    font-size: 13px;
+
+    line-height: 1.45;
+
+}
+
+.materials-status i {
+
+    margin-top: 2px;
+
+    color: var(--primary-light);
+
+}
+
+.materials-status-warning {
+
+    border-color:
+        rgba(245, 158, 11, 0.32);
+
+    background:
+        rgba(245, 158, 11, 0.1);
+
+}
+
+.materials-status-warning i {
+
+    color: var(--warning);
+
+}
+
+.materials-status-error {
+
+    border-color:
+        rgba(239, 68, 68, 0.34);
+
+    background:
+        rgba(239, 68, 68, 0.1);
+
+}
+
+.materials-status-error i {
+
+    color: var(--danger);
+
+}
+
+body.light-mode .materials-status {
+
+    background:
+        rgba(255, 255, 255, 0.82);
+
+}
+
 .spinner {
 
     width: 22px;

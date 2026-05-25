@@ -26,6 +26,11 @@ let carregandoSolicitacoes = false
 let resumoAdminDashboard = null
 let chaveCacheSolicitacoes = ""
 let solicitacoesCarregadasEm = 0
+let carregandoMateriais = false
+let materiaisCarregados = false
+let origemMateriais = ""
+let erroCarregamentoMateriais = ""
+let promessaCarregamentoMateriais = null
 
 const LIMITE_SOLICITACOES =
     20
@@ -38,6 +43,12 @@ const CHAVE_CACHE_MATERIAIS =
 
 const TEMPO_CACHE_MATERIAIS =
     12 * 60 * 60 * 1000
+
+const VERSAO_CACHE_MATERIAIS =
+    "2026-05-25-2"
+
+const ARQUIVO_MATERIAIS_LOCAL =
+    `data/materiais.json?v=${VERSAO_CACHE_MATERIAIS}`
 
 // =========================
 // LOGIN
@@ -79,6 +90,9 @@ const divResultados =
 
 const divLoading =
     document.getElementById("loading")
+
+const divStatusMateriais =
+    document.getElementById("statusMateriais")
 
 // =========================
 // MODAL MATERIAL
@@ -3077,9 +3091,71 @@ if (btnSair) {
 async function carregarMateriaisJsonLocal() {
 
     const resposta =
-        await fetch("data/materiais.json")
+        await fetch(
+            ARQUIVO_MATERIAIS_LOCAL,
+            {
+                cache:
+                    "no-store"
+            }
+        )
+
+    if (!resposta.ok) {
+
+        throw new Error(
+            `Falha ao carregar JSON local: ${resposta.status}`
+        )
+
+    }
 
     return await resposta.json()
+
+}
+
+function normalizarMaterialLocal(material) {
+
+    return {
+
+        ...material,
+
+        codigo:
+            String(material?.codigo || "").trim(),
+
+        descricao:
+            String(material?.descricao || "").trim(),
+
+        almoxarifado:
+            String(material?.almoxarifado || "").trim().toUpperCase(),
+
+        estoque:
+            Number(material?.estoque || 0),
+
+        disponivel:
+            material?.disponivel === true,
+
+        ativo:
+            material?.ativo !== false
+
+    }
+
+}
+
+function normalizarListaMateriais(lista) {
+
+    if (!Array.isArray(lista)) {
+
+        return []
+
+    }
+
+    return lista
+        .map(normalizarMaterialLocal)
+        .filter(material => {
+
+            return material.ativo !== false &&
+                material.codigo &&
+                material.descricao
+
+        })
 
 }
 
@@ -3092,7 +3168,11 @@ function carregarMateriaisCacheLocal() {
                 localStorage.getItem(CHAVE_CACHE_MATERIAIS) || "null"
             )
 
-        if (!cache || !Array.isArray(cache.materiais)) {
+        if (
+            !cache ||
+            cache.versao !== VERSAO_CACHE_MATERIAIS ||
+            !Array.isArray(cache.materiais)
+        ) {
 
             return null
 
@@ -3107,7 +3187,9 @@ function carregarMateriaisCacheLocal() {
 
         }
 
-        return cache.materiais
+        return normalizarListaMateriais(
+            cache.materiais
+        )
 
     }
 
@@ -3136,8 +3218,10 @@ function salvarMateriaisCacheLocal(lista) {
             JSON.stringify({
                 salvoEm:
                     Date.now(),
+                versao:
+                    VERSAO_CACHE_MATERIAIS,
                 materiais:
-                    lista
+                    normalizarListaMateriais(lista)
             })
         )
 
@@ -3155,6 +3239,19 @@ function salvarMateriaisCacheLocal(lista) {
 }
 
 function prepararBuscaMateriais() {
+
+    if (typeof Fuse === "undefined") {
+
+        fuse =
+            null
+
+        console.warn(
+            "Fuse.js nao carregou. Usando busca simples por codigo/descricao."
+        )
+
+        return
+
+    }
 
     fuse = new Fuse(materiais, {
 
@@ -3184,7 +3281,227 @@ function prepararBuscaMateriais() {
 
 }
 
+function registrarDiagnosticoMateriais(erro = null) {
+
+    const usuario =
+        obterSessaoUsuario()
+
+    console.info(
+        "[materiais] usuario logado:",
+        usuario?.matricula || usuario?.uid || "nao identificado"
+    )
+
+    console.info(
+        "[materiais] perfil:",
+        usuario?.perfil || "usuario"
+    )
+
+    console.info(
+        "[materiais] origem:",
+        origemMateriais || "nao carregado"
+    )
+
+    console.info(
+        "[materiais] quantidade carregada:",
+        materiais.length
+    )
+
+    if (erro) {
+
+        console.error(
+            "[materiais] erro de carregamento:",
+            erro
+        )
+
+    }
+
+}
+
+function atualizarStatusMateriais(tipo, mensagem) {
+
+    if (!divStatusMateriais) {
+
+        return
+
+    }
+
+    if (!mensagem) {
+
+        divStatusMateriais.className =
+            "materials-status hidden"
+
+        divStatusMateriais.innerHTML =
+            ""
+
+        return
+
+    }
+
+    const icones = {
+        info:
+            "fa-circle-info",
+        warning:
+            "fa-triangle-exclamation",
+        error:
+            "fa-circle-exclamation"
+    }
+
+    divStatusMateriais.className =
+        `materials-status materials-status-${tipo || "info"}`
+
+    divStatusMateriais.innerHTML = `
+        <i class="fa-solid ${icones[tipo] || icones.info}"></i>
+        <span>${escaparHtml(mensagem)}</span>
+    `
+
+}
+
+function mostrarErroMateriaisCarregamento() {
+
+    const mensagem =
+        "Não foi possível carregar os materiais. Verifique sua conexão ou tente atualizar a página."
+
+    atualizarStatusMateriais(
+        "error",
+        mensagem
+    )
+
+    if (divResultados) {
+
+        divResultados.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <p>
+                    ${escaparHtml(mensagem)}
+                </p>
+            </div>
+        `
+
+    }
+
+}
+
+async function obterMateriaisComFallback() {
+
+    const erros = []
+
+    try {
+
+        const materiaisFirebase =
+            normalizarListaMateriais(
+                await listarMateriaisFirebase()
+            )
+
+        if (materiaisFirebase.length === 0) {
+
+            throw new Error(
+                "Firestore retornou zero materiais."
+            )
+
+        }
+
+        origemMateriais =
+            "Firestore"
+
+        salvarMateriaisCacheLocal(
+            materiaisFirebase
+        )
+
+        return materiaisFirebase
+
+    }
+
+    catch (erroFirebase) {
+
+        erros.push(erroFirebase)
+
+        console.warn(
+            "Nao foi possivel carregar materiais do Firestore. Tentando fallback:",
+            erroFirebase
+        )
+
+    }
+
+    const materiaisCache =
+        carregarMateriaisCacheLocal()
+
+    if (materiaisCache && materiaisCache.length > 0) {
+
+        origemMateriais =
+            "cache local"
+
+        return materiaisCache
+
+    }
+
+    try {
+
+        const materiaisJson =
+            normalizarListaMateriais(
+                await carregarMateriaisJsonLocal()
+            )
+
+        if (materiaisJson.length === 0) {
+
+            throw new Error(
+                "JSON local retornou zero materiais."
+            )
+
+        }
+
+        origemMateriais =
+            "JSON local"
+
+        salvarMateriaisCacheLocal(
+            materiaisJson
+        )
+
+        return materiaisJson
+
+    }
+
+    catch (erroJson) {
+
+        erros.push(erroJson)
+
+    }
+
+    throw new Error(
+        erros
+            .map(erro => erro.message || String(erro))
+            .join(" | ")
+    )
+
+}
+
 async function carregarMateriais() {
+
+    if (materiaisCarregados) {
+
+        return materiais
+
+    }
+
+    if (promessaCarregamentoMateriais) {
+
+        return promessaCarregamentoMateriais
+
+    }
+
+    promessaCarregamentoMateriais =
+        executarCarregamentoMateriais()
+
+    return promessaCarregamentoMateriais
+
+}
+
+async function executarCarregamentoMateriais() {
+
+    carregandoMateriais =
+        true
+
+    erroCarregamentoMateriais =
+        ""
 
     try {
 
@@ -3194,58 +3511,70 @@ async function carregarMateriais() {
 
         }
 
-        materiais =
-            carregarMateriaisCacheLocal()
+        if (campoBusca) {
 
-        if (!materiais || materiais.length === 0) {
-
-            materiais =
-                await carregarMateriaisJsonLocal()
-
-            salvarMateriaisCacheLocal(materiais)
+            campoBusca.disabled =
+                true
 
         }
 
-        console.log(
-            "Materiais carregados:",
-            materiais.length
+        atualizarStatusMateriais(
+            "info",
+            "Carregando materiais..."
         )
 
+        materiais =
+            await obterMateriaisComFallback()
+
         prepararBuscaMateriais()
+
+        materiaisCarregados =
+            materiais.length > 0
+
+        if (origemMateriais === "Firestore") {
+
+            atualizarStatusMateriais(
+                "",
+                ""
+            )
+
+        }
+
+        else {
+
+            atualizarStatusMateriais(
+                "warning",
+                `Usando materiais do ${origemMateriais}. Os dados podem não ser os mais recentes.`
+            )
+
+        }
+
+        registrarDiagnosticoMateriais()
+
+        return materiais
 
     }
 
     catch (erro) {
 
-        console.error(
-            "Erro ao carregar materiais do JSON local/cache:",
-            erro
-        )
+        materiais =
+            []
 
-        try {
+        fuse =
+            null
 
-            materiais =
-                await listarMateriaisFirebase()
+        materiaisCarregados =
+            false
 
-            console.log(
-                "Materiais carregados do Firebase:",
-                materiais.length
-            )
+        erroCarregamentoMateriais =
+            erro.message ||
+            "Erro desconhecido ao carregar materiais."
 
-            salvarMateriaisCacheLocal(materiais)
+        mostrarErroMateriaisCarregamento()
 
-            prepararBuscaMateriais()
+        registrarDiagnosticoMateriais(erro)
 
-        }
-
-        catch (erroFirebase) {
-
-            console.error(
-                "Erro ao carregar materiais do Firebase:",
-                erroFirebase
-            )
-
-        }
+        return materiais
 
     }
 
@@ -3254,6 +3583,25 @@ async function carregarMateriais() {
         if (divLoading) {
 
             divLoading.classList.add("hidden")
+
+        }
+
+        if (campoBusca) {
+
+            campoBusca.disabled =
+                false
+
+        }
+
+        carregandoMateriais =
+            false
+
+        promessaCarregamentoMateriais =
+            null
+
+        if (materiaisCarregados) {
+
+            buscarMateriais()
 
         }
 
@@ -5301,13 +5649,22 @@ function renderizarSolicitacoes() {
 // BUSCA DE MATERIAIS
 // =========================
 
+function buscarMateriaisSimples(textoBusca) {
+
+    return materiais.filter(material => {
+
+        const codigo =
+            String(material.codigo || "")
+                .toLowerCase()
+
+        return codigo.includes(textoBusca) ||
+            textoContem(material.descricao, textoBusca)
+
+    })
+
+}
+
 function buscarMateriais() {
-
-    if (!fuse) {
-
-        return
-
-    }
 
     const campoBuscaAtual =
         document.getElementById("busca")
@@ -5323,6 +5680,37 @@ function buscarMateriais() {
         !selectAlmoxarifadoAtual ||
         !divResultadosAtual
     ) {
+
+        return
+
+    }
+
+    if (carregandoMateriais) {
+
+        divResultadosAtual.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <p>
+                    Carregando materiais...
+                </p>
+            </div>
+        `
+
+        return
+
+    }
+
+    if (!materiaisCarregados || materiais.length === 0) {
+
+        if (erroCarregamentoMateriais) {
+
+            mostrarErroMateriaisCarregamento()
+
+            return
+
+        }
+
+        carregarMateriais()
 
         return
 
@@ -5365,10 +5753,37 @@ function buscarMateriais() {
 
     else {
 
-        resultados =
-            fuse
-                .search(textoBusca)
-                .map(resultado => resultado.item)
+        if (fuse) {
+
+            try {
+
+                resultados =
+                    fuse
+                        .search(textoBusca)
+                        .map(resultado => resultado.item)
+
+            }
+
+            catch (erroFuse) {
+
+                console.warn(
+                    "Busca Fuse.js falhou. Usando busca simples:",
+                    erroFuse
+                )
+
+                resultados =
+                    buscarMateriaisSimples(textoBusca)
+
+            }
+
+        }
+
+        else {
+
+            resultados =
+                buscarMateriaisSimples(textoBusca)
+
+        }
 
     }
 
