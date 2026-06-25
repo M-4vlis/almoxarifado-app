@@ -217,6 +217,22 @@ Se quiser apenas importar os vinculos sem mexer nas solicitacoes:
 venv/bin/python scripts/importar_firebase.py --somente requisicoes --nao-atualizar-solicitacoes
 ```
 
+## Limpeza de solicitacoes sem requisicao
+
+Para conferir quais solicitacoes ainda nao possuem requisicao vinculada, rode primeiro em modo teste:
+
+```bash
+venv/bin/python scripts/importar_firebase.py --somente solicitacoes-nao-vinculadas --dry-run
+```
+
+Depois de conferir o resumo, rode sem `--dry-run` para remover essas solicitacoes do Firestore:
+
+```bash
+venv/bin/python scripts/importar_firebase.py --somente solicitacoes-nao-vinculadas
+```
+
+Essa rotina preserva solicitacoes que tenham `numeroRequisicao`, `requisicoesVinculadas` ou status `requisicao_vinculada`/`concluida`.
+
 ## Rotina Diaria Recomendada
 
 Quando atualizar as planilhas `LISTA de MATERIAIS.xlsx` e `GLPI - REQUISICAO.xlsx`, rode:

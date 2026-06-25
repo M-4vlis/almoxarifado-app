@@ -27,6 +27,10 @@ ABAS_MATERIAIS = [
 LIMITE_BATCH = 450
 LIMITE_BATCH_SOLICITACOES = 300
 PAUSA_ENTRE_LOTES_SOLICITACOES = 0.4
+STATUS_COM_REQUISICAO = {
+    "requisicao_vinculada",
+    "concluida",
+}
 
 firebase_admin = None
 auth = None
@@ -1196,12 +1200,127 @@ def obter_quantidade_item(item):
     return obter_numero_seguro(item.get("quantidade"))
 
 
+def obter_requisicoes_da_solicitacao(dados):
+    requisicoes_vinculadas = dados.get("requisicoesVinculadas") or []
+
+    if not isinstance(requisicoes_vinculadas, list):
+        requisicoes_vinculadas = [requisicoes_vinculadas]
+
+    requisicoes = [
+        dados.get("numeroRequisicao"),
+        *requisicoes_vinculadas,
+    ]
+
+    return [
+        limpar_numero(requisicao)
+        for requisicao in requisicoes
+        if limpar_numero(requisicao)
+    ]
+
+
 def solicitacao_tem_requisicao(dados):
+    status_atendimento = limpar_texto(dados.get("statusAtendimento"))
+    status = limpar_texto(dados.get("status"))
+
     return bool(
-        dados.get("numeroRequisicao") or
-        dados.get("requisicoesVinculadas") or
-        dados.get("statusAtendimento") in ["requisicao_vinculada", "concluida"]
+        obter_requisicoes_da_solicitacao(dados) or
+        status_atendimento in STATUS_COM_REQUISICAO or
+        status in STATUS_COM_REQUISICAO
     )
+
+
+def imprimir_resumo_limpeza_solicitacoes(resumo):
+    print("\nResumo da limpeza de solicitacoes sem requisicao vinculada")
+    print(f"Solicitacoes analisadas: {resumo['analisadas']}")
+    print(f"Solicitacoes preservadas: {resumo['preservadas']}")
+    print(f"Solicitacoes removidas: {resumo['removidas']}")
+
+    if resumo["dry_run"]:
+        print("Modo dry-run: nenhuma solicitacao foi removida.")
+
+    if resumo["exemplos"]:
+        print("\nExemplos de solicitacoes sem requisicao:")
+
+        for exemplo in resumo["exemplos"]:
+            print(f"- {exemplo}")
+
+
+def descrever_solicitacao_para_limpeza(snapshot, dados):
+    glpi = limpar_texto(dados.get("glpi")) or "sem GLPI"
+    data_local = limpar_texto(dados.get("dataLocal")) or "sem data"
+    usuario = (
+        limpar_texto(dados.get("usuarioNome")) or
+        limpar_texto((dados.get("usuarioSolicitante") or {}).get("nome")) or
+        "usuario nao informado"
+    )
+
+    return f"{snapshot.id} | GLPI {glpi} | {data_local} | {usuario}"
+
+
+def limpar_solicitacoes_sem_requisicao(db, dry_run):
+    resumo = {
+        "analisadas": 0,
+        "preservadas": 0,
+        "removidas": 0,
+        "dry_run": dry_run,
+        "exemplos": [],
+    }
+
+    if db is None:
+        print("Firestore nao inicializado. Limpeza nao executada.")
+        imprimir_resumo_limpeza_solicitacoes(resumo)
+        return
+
+    batch = None
+    contador_batch = 0
+
+    if not dry_run:
+        batch = db.batch()
+
+    def commitar_lote_limpeza():
+        nonlocal batch
+        nonlocal contador_batch
+
+        if contador_batch == 0:
+            return
+
+        if dry_run:
+            resumo["removidas"] += contador_batch
+            contador_batch = 0
+            return
+
+        batch.commit()
+        resumo["removidas"] += contador_batch
+        batch = db.batch()
+        contador_batch = 0
+        time.sleep(PAUSA_ENTRE_LOTES_SOLICITACOES)
+
+    for snapshot in db.collection("solicitacoes").stream():
+        dados = snapshot.to_dict() or {}
+        resumo["analisadas"] += 1
+
+        if solicitacao_tem_requisicao(dados):
+            resumo["preservadas"] += 1
+            continue
+
+        if len(resumo["exemplos"]) < 10:
+            resumo["exemplos"].append(
+                descrever_solicitacao_para_limpeza(
+                    snapshot,
+                    dados,
+                )
+            )
+
+        if not dry_run:
+            batch.delete(snapshot.reference)
+
+        contador_batch += 1
+
+        if contador_batch >= LIMITE_BATCH_SOLICITACOES:
+            commitar_lote_limpeza()
+
+    commitar_lote_limpeza()
+    imprimir_resumo_limpeza_solicitacoes(resumo)
 
 
 def somar_ranking(mapa, chave, quantidade=0, total=0, detalhe=""):
@@ -1469,13 +1588,14 @@ def montar_parser():
             "usuarios",
             "materiais",
             "requisicoes",
+            "solicitacoes-nao-vinculadas",
         ],
         default=[
             "usuarios",
             "materiais",
             "requisicoes",
         ],
-        help="Define quais importacoes executar.",
+        help="Define quais importacoes ou rotinas de manutencao executar.",
     )
 
     parser.add_argument(
@@ -1530,7 +1650,12 @@ def main():
 
     db = None
 
-    if not args.dry_run:
+    precisa_firestore = (
+        not args.dry_run or
+        "solicitacoes-nao-vinculadas" in args.somente
+    )
+
+    if precisa_firestore:
         inicializar_firebase(args.service_account)
         db = firestore.client()
 
@@ -1572,6 +1697,13 @@ def main():
                 mapa,
                 args.dry_run,
             )
+
+    if "solicitacoes-nao-vinculadas" in args.somente:
+        print("\nLimpeza de solicitacoes sem requisicao vinculada")
+        limpar_solicitacoes_sem_requisicao(
+            db,
+            args.dry_run,
+        )
 
     if not args.nao_atualizar_resumo_admin:
         print("\nResumo admin")
