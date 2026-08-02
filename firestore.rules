@@ -77,7 +77,8 @@ service cloud.firestore {
     }
 
     match /configuracoes/{document=**} {
-      allow read, write: if ehAdmin();
+      allow read: if estaLogado();
+      allow write: if ehAdmin();
     }
 
     match /importacoes/{document=**} {

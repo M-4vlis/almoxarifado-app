@@ -2,10 +2,11 @@ import {
     loginFirebase,
     logoutFirebase,
     listarMateriaisFirebase,
+    observarVersaoMateriaisFirebase,
     salvarSolicitacaoFirebase,
     listarSolicitacoesPorPerfilFirebase,
     buscarResumoAdminFirebase
-} from "./firebase.js"
+} from "./firebase.js?v=2026-08-02-1"
 
 let materiais = []
 let fuse
@@ -31,6 +32,8 @@ let materiaisCarregados = false
 let origemMateriais = ""
 let erroCarregamentoMateriais = ""
 let promessaCarregamentoMateriais = null
+let cancelarObservacaoMateriais = null
+let versaoMateriaisAtual = ""
 
 const LIMITE_SOLICITACOES =
     20
@@ -45,7 +48,7 @@ const TEMPO_CACHE_MATERIAIS =
     12 * 60 * 60 * 1000
 
 const VERSAO_CACHE_MATERIAIS =
-    "2026-05-25-2"
+    "2026-08-02-1"
 
 const ARQUIVO_MATERIAIS_LOCAL =
     `data/materiais.json?v=${VERSAO_CACHE_MATERIAIS}`
@@ -3019,6 +3022,15 @@ if (formLogin) {
 
 async function sairDoSistema() {
 
+    if (cancelarObservacaoMateriais) {
+
+        cancelarObservacaoMateriais()
+        cancelarObservacaoMateriais = null
+
+    }
+
+    versaoMateriaisAtual = ""
+
     try {
 
         await logoutFirebase()
@@ -3042,6 +3054,9 @@ async function sairDoSistema() {
     chaveCacheSolicitacoes = ""
     solicitacoesCarregadasEm = 0
     resumoAdminDashboard = null
+    appJaIniciado = false
+    materiaisCarregados = false
+    promessaCarregamentoMateriais = null
 
     if (campoBusca) {
 
@@ -3492,6 +3507,94 @@ async function carregarMateriais() {
         executarCarregamentoMateriais()
 
     return promessaCarregamentoMateriais
+
+}
+
+async function recarregarMateriaisAtualizados() {
+
+    materiaisCarregados = false
+    promessaCarregamentoMateriais = null
+
+    await carregarMateriais()
+
+    if (materiaisCarregados) {
+
+        mostrarToast(
+            "Lista de materiais atualizada automaticamente."
+        )
+
+    }
+
+}
+
+function iniciarObservacaoMateriais() {
+
+    if (cancelarObservacaoMateriais) {
+
+        return
+
+    }
+
+    let primeiraNotificacao =
+        true
+
+    cancelarObservacaoMateriais =
+        observarVersaoMateriaisFirebase(
+            async versao => {
+
+                const chaveVersao =
+                    String(
+                        versao.updateId ||
+                        versao.atualizadoEm ||
+                        ""
+                    )
+
+                if (primeiraNotificacao) {
+
+                    primeiraNotificacao = false
+                    versaoMateriaisAtual = chaveVersao
+                    return
+
+                }
+
+                if (
+                    !chaveVersao ||
+                    chaveVersao === versaoMateriaisAtual
+                ) {
+
+                    return
+
+                }
+
+                versaoMateriaisAtual = chaveVersao
+
+                try {
+
+                    await recarregarMateriaisAtualizados()
+
+                }
+
+                catch (erro) {
+
+                    console.error(
+                        "Falha ao recarregar materiais atualizados:",
+                        erro
+                    )
+
+                }
+
+            },
+            erro => {
+
+                console.warn(
+                    "Nao foi possivel observar atualizacoes de materiais:",
+                    erro
+                )
+
+                cancelarObservacaoMateriais = null
+
+            }
+        )
 
 }
 
@@ -6013,6 +6116,7 @@ async function iniciarAplicacao() {
     carregarCarrinhoLocal()
 
     await carregarMateriais()
+    iniciarObservacaoMateriais()
 
     atualizarCarrinho()
 

@@ -13,6 +13,7 @@ import {
     doc,
     getDoc,
     getDocs,
+    onSnapshot,
     query,
     where,
     orderBy,
@@ -936,6 +937,57 @@ function normalizarMaterialFirebase(documento) {
 // LISTAR MATERIAIS
 // =========================
 
+function observarVersaoMateriaisFirebase(aoAtualizar, aoFalhar) {
+
+    const referencia =
+        doc(
+            db,
+            "configuracoes",
+            "materiais"
+        )
+
+    return onSnapshot(
+        referencia,
+        snapshot => {
+
+            if (!snapshot.exists()) {
+
+                aoAtualizar?.({
+                    updateId: "",
+                    atualizadoEm: "",
+                    totalAtivos: 0
+                })
+                return
+
+            }
+
+            const dados =
+                snapshot.data() || {}
+
+            const atualizadoEm =
+                dados.atualizadoEm
+
+            aoAtualizar?.({
+                updateId:
+                    dados.updateId || "",
+                atualizadoEm:
+                    atualizadoEm?.toMillis?.() ||
+                    atualizadoEm?.seconds ||
+                    "",
+                totalAtivos:
+                    Number(dados.totalAtivos || 0)
+            })
+
+        },
+        erro => {
+
+            aoFalhar?.(erro)
+
+        }
+    )
+
+}
+
 async function listarMateriaisFirebase() {
 
     const referencia =
@@ -1507,6 +1559,7 @@ export {
     observarUsuarioLogado,
     buscarUsuarioFirebase,
     listarMateriaisFirebase,
+    observarVersaoMateriaisFirebase,
     salvarSolicitacaoFirebase,
     listarMinhasSolicitacoesFirebase,
     listarTodasSolicitacoesFirebase,
