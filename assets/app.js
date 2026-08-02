@@ -6,7 +6,7 @@ import {
     salvarSolicitacaoFirebase,
     listarSolicitacoesPorPerfilFirebase,
     buscarResumoAdminFirebase
-} from "./firebase.js?v=2026-08-02-1"
+} from "./firebase.js?v=2026-08-02-2"
 
 let materiais = []
 let fuse
@@ -48,7 +48,7 @@ const TEMPO_CACHE_MATERIAIS =
     12 * 60 * 60 * 1000
 
 const VERSAO_CACHE_MATERIAIS =
-    "2026-08-02-1"
+    "2026-08-02-2"
 
 const ARQUIVO_MATERIAIS_LOCAL =
     `data/materiais.json?v=${VERSAO_CACHE_MATERIAIS}`
@@ -118,6 +118,9 @@ const modalDescricao =
 
 const modalStatus =
     document.getElementById("modalStatus")
+
+const modalEstoqueAdmin =
+    document.getElementById("modalEstoqueAdmin")
 
 const btnAdicionarLista =
     document.getElementById("btnAdicionarLista")
@@ -3128,7 +3131,7 @@ async function carregarMateriaisJsonLocal() {
 
 function normalizarMaterialLocal(material) {
 
-    return {
+    const materialNormalizado = {
 
         ...material,
 
@@ -3141,9 +3144,6 @@ function normalizarMaterialLocal(material) {
         almoxarifado:
             String(material?.almoxarifado || "").trim().toUpperCase(),
 
-        estoque:
-            Number(material?.estoque || 0),
-
         disponivel:
             material?.disponivel === true,
 
@@ -3151,6 +3151,41 @@ function normalizarMaterialLocal(material) {
             material?.ativo !== false
 
     }
+
+    delete materialNormalizado.estoque
+
+    if (
+        !usuarioEhAdmin() ||
+        material?.temDetalhesEstoqueAdmin !== true
+    ) {
+
+        delete materialNormalizado.estoqueDisponivel
+        delete materialNormalizado.quantidadeReservada
+        delete materialNormalizado.estoqueTotal
+
+        materialNormalizado.temDetalhesEstoqueAdmin =
+            false
+
+    }
+
+    return materialNormalizado
+
+}
+
+function removerDetalhesEstoqueAdmin(material) {
+
+    const materialPublico = {
+        ...material,
+        temDetalhesEstoqueAdmin:
+            false
+    }
+
+    delete materialPublico.estoque
+    delete materialPublico.estoqueDisponivel
+    delete materialPublico.quantidadeReservada
+    delete materialPublico.estoqueTotal
+
+    return materialPublico
 
 }
 
@@ -3237,6 +3272,7 @@ function salvarMateriaisCacheLocal(lista) {
                     VERSAO_CACHE_MATERIAIS,
                 materiais:
                     normalizarListaMateriais(lista)
+                        .map(removerDetalhesEstoqueAdmin)
             })
         )
 
@@ -3404,7 +3440,9 @@ async function obterMateriaisComFallback() {
 
         const materiaisFirebase =
             normalizarListaMateriais(
-                await listarMateriaisFirebase()
+                await listarMateriaisFirebase(
+                    usuarioEhAdmin()
+                )
             )
 
         if (materiaisFirebase.length === 0) {
@@ -3780,6 +3818,74 @@ function carregarImagemMaterial(codigo) {
 // MODAL MATERIAL
 // =========================
 
+function formatarQuantidadeEstoque(valor) {
+
+    const numero =
+        Number(valor || 0)
+
+    return new Intl.NumberFormat(
+        "pt-BR",
+        {
+            minimumFractionDigits:
+                Number.isInteger(numero) ? 0 : 2,
+            maximumFractionDigits:
+                3
+        }
+    ).format(numero)
+
+}
+
+function montarEstoqueAdminHtml(material, contexto = "resultado") {
+
+    if (
+        !usuarioEhAdmin() ||
+        material?.temDetalhesEstoqueAdmin !== true
+    ) {
+
+        return ""
+
+    }
+
+    const disponivel =
+        Math.max(
+            Number(material.estoqueDisponivel || 0),
+            0
+        )
+
+    const reservado =
+        Math.max(
+            Number(material.quantidadeReservada || 0),
+            0
+        )
+
+    const reservaHtml =
+        reservado > 0
+            ? `
+                <span class="estoque-admin-item reservado">
+                    <i class="fa-solid fa-lock"></i>
+                    Reservado: ${escaparHtml(formatarQuantidadeEstoque(reservado))}
+                </span>
+            `
+            : ""
+
+    return `
+        <div class="estoque-admin estoque-admin-${contexto}" aria-label="Detalhes administrativos do estoque">
+            <span class="estoque-admin-identificacao">
+                <i class="fa-solid fa-shield-halved"></i>
+                Visível somente para administradores
+            </span>
+            <div class="estoque-admin-valores">
+                <span class="estoque-admin-item disponivel">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    Disponível: ${escaparHtml(formatarQuantidadeEstoque(disponivel))}
+                </span>
+                ${reservaHtml}
+            </div>
+        </div>
+    `
+
+}
+
 function abrirModal(material) {
 
     materialSelecionado =
@@ -3790,6 +3896,24 @@ function abrirModal(material) {
 
     modalDescricao.innerHTML =
         escaparHtml(material.descricao)
+
+    if (modalEstoqueAdmin) {
+
+        const estoqueAdminHtml =
+            montarEstoqueAdminHtml(
+                material,
+                "modal"
+            )
+
+        modalEstoqueAdmin.innerHTML =
+            estoqueAdminHtml
+
+        modalEstoqueAdmin.classList.toggle(
+            "hidden",
+            !estoqueAdminHtml
+        )
+
+    }
 
     if (material.disponivel) {
 
@@ -6037,6 +6161,9 @@ function buscarMateriais() {
 
         }
 
+        const estoqueAdminHtml =
+            montarEstoqueAdminHtml(material)
+
         div.innerHTML = `
             <div class="codigo">
                 Código: ${escaparHtml(material.codigo)}
@@ -6049,6 +6176,8 @@ function buscarMateriais() {
             <div class="status">
                 ${escaparHtml(statusTexto)}
             </div>
+
+            ${estoqueAdminHtml}
         `
 
         div.addEventListener(
