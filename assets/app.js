@@ -8,6 +8,10 @@ import {
     buscarResumoAdminFirebase
 } from "./firebase.js?v=2026-08-02-2"
 
+import {
+    criarUrlWhatsapp
+} from "./whatsapp.js?v=2026-08-31-1"
+
 let materiais = []
 let fuse
 
@@ -2682,10 +2686,7 @@ function renderizarSolicitacoesRecentes(lista = solicitacoesCarregadas) {
         .forEach(solicitacao => {
 
             const card =
-                document.createElement("button")
-
-            card.type =
-                "button"
+                document.createElement("article")
 
             card.classList.add(
                 "home-recente-card"
@@ -2701,25 +2702,50 @@ function renderizarSolicitacoesRecentes(lista = solicitacoesCarregadas) {
                 solicitacao.dataLocal ||
                 "Data não informada"
 
+            const acaoReenvioHtml =
+                podeReenviarSolicitacao(solicitacao)
+                    ? `
+                        <button
+                            class="btn-reenviar-solicitacao btn-reenviar-compacto"
+                            type="button"
+                            aria-label="Reenviar solicitação GLPI ${escaparHtml(solicitacao.glpi)} no WhatsApp"
+                        >
+                            <i class="fa-brands fa-whatsapp"></i>
+                            <span>Reenviar</span>
+                        </button>
+                    `
+                    : ""
+
             card.innerHTML = `
-                <div>
-                    <span>
-                        ${escaparHtml(dataTexto)}
-                    </span>
+                <button
+                    class="home-recente-detalhes"
+                    type="button"
+                    aria-label="Ver detalhes da solicitação GLPI ${escaparHtml(solicitacao.glpi)}"
+                >
+                    <div>
+                        <span>
+                            ${escaparHtml(dataTexto)}
+                        </span>
 
-                    <strong>
-                        GLPI ${escaparHtml(solicitacao.glpi)}
-                    </strong>
+                        <strong>
+                            GLPI ${escaparHtml(solicitacao.glpi)}
+                        </strong>
 
-                    <small>
-                        ${escaparHtml(statusTexto)}
-                    </small>
-                </div>
+                        <small>
+                            ${escaparHtml(statusTexto)}
+                        </small>
+                    </div>
 
-                <i class="fa-solid fa-chevron-right"></i>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+                ${acaoReenvioHtml}
             `
 
-            card.addEventListener(
+            const botaoDetalhes =
+                card.querySelector(".home-recente-detalhes")
+
+            botaoDetalhes.addEventListener(
                 "click",
                 async () => {
 
@@ -2727,6 +2753,22 @@ function renderizarSolicitacoesRecentes(lista = solicitacoesCarregadas) {
 
                 }
             )
+
+            const botaoReenviar =
+                card.querySelector(".btn-reenviar-solicitacao")
+
+            if (botaoReenviar) {
+
+                botaoReenviar.addEventListener(
+                    "click",
+                    () => {
+
+                        reenviarSolicitacaoWhatsapp(solicitacao)
+
+                    }
+                )
+
+            }
 
             container.appendChild(card)
 
@@ -4600,52 +4642,77 @@ function montarDadosSolicitacaoFirebase(dadosFormulario) {
 
 }
 
-function gerarMensagemWhatsapp(
-    dadosFormulario,
-    idSolicitacaoFirebase
+function obterDadosWhatsappSolicitacao(solicitacao) {
+
+    return {
+
+        glpi:
+            solicitacao.glpi || "",
+
+        nomeRetirada:
+            solicitacao.nomeRetirada || "",
+
+        matriculaRetirada:
+            solicitacao.matriculaRetirada || "",
+
+        localUso:
+            solicitacao.localUso || ""
+
+    }
+
+}
+
+function podeReenviarSolicitacao(solicitacao) {
+
+    return Boolean(
+        solicitacao?.id &&
+        Array.isArray(solicitacao.itens) &&
+        solicitacao.itens.length > 0
+    )
+
+}
+
+function abrirSolicitacaoWhatsapp(
+    dadosSolicitacao,
+    idSolicitacaoFirebase,
+    itens
 ) {
 
-    let mensagem =
-        `📦 *SOLICITAÇÃO DE MATERIAL*\n\n`
+    const url =
+        criarUrlWhatsapp(
+            dadosSolicitacao,
+            idSolicitacaoFirebase,
+            itens
+        )
 
-    mensagem +=
-        `🆔 *ID INTERNO:* ${idSolicitacaoFirebase}\n\n`
+    window.open(
+        url,
+        "_blank"
+    )
 
-    mensagem +=
-        `🎫 *GLPI:* ${dadosFormulario.glpi}\n\n`
+}
 
-    mensagem +=
-        `👤 *RETIRADA:*\n`
+function reenviarSolicitacaoWhatsapp(solicitacao) {
 
-    mensagem +=
-        `${dadosFormulario.nomeRetirada}\n`
+    if (!podeReenviarSolicitacao(solicitacao)) {
 
-    mensagem +=
-        `Matrícula: ${dadosFormulario.matriculaRetirada}\n\n`
+        alert(
+            "Não foi possível reenviar esta solicitação porque os dados completos não estão disponíveis."
+        )
 
-    mensagem +=
-        `📍 *LOCAL:*\n`
+        return
 
-    mensagem +=
-        `${dadosFormulario.localUso}\n\n`
+    }
 
-    mensagem +=
-        `🧾 *MATERIAIS:*\n\n`
+    abrirSolicitacaoWhatsapp(
+        obterDadosWhatsappSolicitacao(solicitacao),
+        solicitacao.id,
+        solicitacao.itens
+    )
 
-    listaSolicitacao.forEach(item => {
-
-        mensagem +=
-            `• ${item.quantidade}x ${item.descricao}\n`
-
-        mensagem +=
-            `Código: ${item.codigo}\n`
-
-        mensagem +=
-            `Almoxarifado: ${item.almoxarifado}\n\n`
-
-    })
-
-    return mensagem
+    mostrarToast(
+        "Solicitação aberta novamente no WhatsApp"
+    )
 
 }
 
@@ -4707,21 +4774,10 @@ if (btnEnviarWhatsapp) {
                         dadosFirebase
                     )
 
-                const mensagem =
-                    gerarMensagemWhatsapp(
-                        dadosFormulario,
-                        idSolicitacaoFirebase
-                    )
-
-                const texto =
-                    encodeURIComponent(mensagem)
-
-                const url =
-                    `https://wa.me/?text=${texto}`
-
-                window.open(
-                    url,
-                    "_blank"
+                abrirSolicitacaoWhatsapp(
+                    dadosFormulario,
+                    idSolicitacaoFirebase,
+                    listaSolicitacao
                 )
 
                 limparDadosAposEnvio()
@@ -5824,7 +5880,40 @@ function renderizarSolicitacoes() {
                         : ""
                 }
             </div>
+
+            ${
+                podeReenviarSolicitacao(solicitacao)
+                    ? `
+                        <div class="solicitacao-acoes">
+                            <button
+                                class="btn-reenviar-solicitacao"
+                                type="button"
+                                aria-label="Reenviar solicitação GLPI ${escaparHtml(solicitacao.glpi)} no WhatsApp"
+                            >
+                                <i class="fa-brands fa-whatsapp"></i>
+                                <span>Reenviar no WhatsApp</span>
+                            </button>
+                        </div>
+                    `
+                    : ""
+            }
         `
+
+        const botaoReenviar =
+            card.querySelector(".btn-reenviar-solicitacao")
+
+        if (botaoReenviar) {
+
+            botaoReenviar.addEventListener(
+                "click",
+                () => {
+
+                    reenviarSolicitacaoWhatsapp(solicitacao)
+
+                }
+            )
+
+        }
 
         container.appendChild(card)
 
