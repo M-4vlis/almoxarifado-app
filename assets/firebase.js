@@ -889,27 +889,7 @@ function normalizarSolicitacaoFirebase(documento) {
 // NORMALIZAR MATERIAL
 // =========================
 
-function normalizarEstoqueAdminFirebase(documento) {
-
-    const dados =
-        documento.data()
-
-    return {
-
-        estoqueDisponivel:
-            tratarNumero(dados.estoqueDisponivel),
-
-        quantidadeReservada:
-            tratarNumero(dados.quantidadeReservada),
-
-        estoqueTotal:
-            tratarNumero(dados.estoqueTotal)
-
-    }
-
-}
-
-function normalizarMaterialFirebase(documento, estoqueAdmin = null) {
+function normalizarMaterialFirebase(documento) {
 
     const dados =
         documento.data()
@@ -928,6 +908,9 @@ function normalizarMaterialFirebase(documento, estoqueAdmin = null) {
         almoxarifado:
             dados.almoxarifado || "",
 
+        estoque:
+            Number(dados.estoque || 0),
+
         valorUnitario:
             dados.valorUnitario ||
             formatarMoedaFirebase(
@@ -944,19 +927,7 @@ function normalizarMaterialFirebase(documento, estoqueAdmin = null) {
             dados.disponivel === true,
 
         ativo:
-            dados.ativo !== false,
-
-        temDetalhesEstoqueAdmin:
-            estoqueAdmin !== null,
-
-        estoqueDisponivel:
-            estoqueAdmin?.estoqueDisponivel ?? null,
-
-        quantidadeReservada:
-            estoqueAdmin?.quantidadeReservada ?? null,
-
-        estoqueTotal:
-            estoqueAdmin?.estoqueTotal ?? null
+            dados.ativo !== false
 
     }
 
@@ -1017,7 +988,7 @@ function observarVersaoMateriaisFirebase(aoAtualizar, aoFalhar) {
 
 }
 
-async function listarMateriaisFirebase(incluirEstoqueAdmin = false) {
+async function listarMateriaisFirebase() {
 
     const referencia =
         collection(db, "materiais")
@@ -1034,53 +1005,12 @@ async function listarMateriaisFirebase(incluirEstoqueAdmin = false) {
     const snapshot =
         await getDocs(consulta)
 
-    const estoquesAdmin =
-        new Map()
-
-    if (incluirEstoqueAdmin) {
-
-        const snapshotAdmin =
-            await getDocs(
-                query(
-                    collection(
-                        db,
-                        "resumosAdmin"
-                    ),
-                    where(
-                        "tipo",
-                        "==",
-                        "estoqueMaterial"
-                    )
-                )
-            )
-
-        snapshotAdmin.forEach(documento => {
-
-            const dados =
-                documento.data()
-
-            if (dados.ativo !== false) {
-
-                estoquesAdmin.set(
-                    dados.chaveMaterial,
-                    normalizarEstoqueAdminFirebase(documento)
-                )
-
-            }
-
-        })
-
-    }
-
     const materiais = []
 
     snapshot.forEach(documento => {
 
         const material =
-            normalizarMaterialFirebase(
-                documento,
-                estoquesAdmin.get(documento.id) || null
-            )
+            normalizarMaterialFirebase(documento)
 
         if (material.ativo) {
 
