@@ -770,7 +770,43 @@ function formatarDataFirebase(timestamp) {
             }
         )
 
-  €mm¢Gß≤⁄Óù∆≠y–     )
+    }
+
+    catch (erro) {
+
+        return ""
+
+    }
+
+}
+
+// =========================
+// NORMALIZAR SOLICITA√á√ÉO
+// =========================
+
+function normalizarSolicitacaoFirebase(documento) {
+
+    const dados =
+        documento.data()
+
+    const itens =
+        Array.isArray(dados.itens)
+            ? dados.itens
+            : []
+
+    const valorTotalCalculado =
+        calcularTotalSolicitacao({
+            itens:
+                itens
+        })
+
+    const valorTotal =
+        valorTotalCalculado ||
+        tratarNumero(dados.valorTotal) ||
+        tratarNumero(
+            dados.valorTotalEstimado ||
+            dados.totalEstimado
+        )
 
     return {
 
