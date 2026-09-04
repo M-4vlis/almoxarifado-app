@@ -6,7 +6,7 @@ import {
     salvarSolicitacaoFirebase,
     listarSolicitacoesPorPerfilFirebase,
     buscarResumoAdminFirebase
-} from "./firebase.js?v=2026-09-03-1"
+} from "./firebase.js?v=2026-09-04-1"
 
 import {
     criarUrlWhatsapp
@@ -52,7 +52,7 @@ const TEMPO_CACHE_MATERIAIS =
     12 * 60 * 60 * 1000
 
 const VERSAO_CACHE_MATERIAIS =
-    "2026-09-03-1"
+    "2026-09-04-1"
 
 const ARQUIVO_MATERIAIS_LOCAL =
     `data/materiais.json?v=${VERSAO_CACHE_MATERIAIS}`
