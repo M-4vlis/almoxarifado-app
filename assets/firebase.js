@@ -68,6 +68,9 @@ const db =
 const auth =
     getAuth(app)
 
+const MATERIAIS_API_BASE_URL =
+    "https://materiais.163-176-228-150.sslip.io"
+
 const cacheValoresMateriais =
     new Map()
 
@@ -767,43 +770,7 @@ function formatarDataFirebase(timestamp) {
             }
         )
 
-    }
-
-    catch (erro) {
-
-        return ""
-
-    }
-
-}
-
-// =========================
-// NORMALIZAR SOLICITA√á√ÉO
-// =========================
-
-function normalizarSolicitacaoFirebase(documento) {
-
-    const dados =
-        documento.data()
-
-    const itens =
-        Array.isArray(dados.itens)
-            ? dados.itens
-            : []
-
-    const valorTotalCalculado =
-        calcularTotalSolicitacao({
-            itens:
-                itens
-        })
-
-    const valorTotal =
-        valorTotalCalculado ||
-        tratarNumero(dados.valorTotal) ||
-        tratarNumero(
-            dados.valorTotalEstimado ||
-            dados.totalEstimado
-        )
+  €mm¢Gß≤⁄Óù∆≠y–     )
 
     return {
 
@@ -886,83 +853,6 @@ function normalizarSolicitacaoFirebase(documento) {
 }
 
 // =========================
-// NORMALIZAR MATERIAL
-// =========================
-
-function normalizarEstoqueAdminFirebase(documento) {
-
-    const dados =
-        documento.data()
-
-    return {
-
-        estoqueDisponivel:
-            tratarNumero(dados.estoqueDisponivel),
-
-        quantidadeReservada:
-            tratarNumero(dados.quantidadeReservada),
-
-        estoqueTotal:
-            tratarNumero(dados.estoqueTotal)
-
-    }
-
-}
-
-function normalizarMaterialFirebase(documento, estoqueAdmin = null) {
-
-    const dados =
-        documento.data()
-
-    return {
-
-        id:
-            documento.id,
-
-        codigo:
-            dados.codigo || "",
-
-        descricao:
-            dados.descricao || "",
-
-        almoxarifado:
-            dados.almoxarifado || "",
-
-        valorUnitario:
-            dados.valorUnitario ||
-            formatarMoedaFirebase(
-                dados.valorUnitarioNumero
-            ),
-
-        valorUnitarioNumero:
-            tratarNumero(
-                dados.valorUnitarioNumero ||
-                dados.valorUnitario
-            ),
-
-        disponivel:
-            dados.disponivel === true,
-
-        ativo:
-            dados.ativo !== false,
-
-        temDetalhesEstoqueAdmin:
-            estoqueAdmin !== null,
-
-        estoqueDisponivel:
-            estoqueAdmin?.estoqueDisponivel ?? null,
-
-        quantidadeReservada:
-            estoqueAdmin?.quantidadeReservada ?? null,
-
-        estoqueTotal:
-            estoqueAdmin?.estoqueTotal ?? null
-
-    }
-
-}
-
-// =========================
 // LISTAR MATERIAIS
 // =========================
 
@@ -1017,80 +907,118 @@ function observarVersaoMateriaisFirebase(aoAtualizar, aoFalhar) {
 
 }
 
-async function listarMateriaisFirebase(incluirEstoqueAdmin = false) {
+async function requisitarMateriaisVps(caminho, renovarToken = false) {
 
-    const referencia =
-        collection(db, "materiais")
+    const usuario =
+        auth.currentUser
 
-    const consulta =
-        query(
-            referencia,
-            orderBy(
-                "descricao",
-                "asc"
-            )
+    if (!usuario) {
+
+        throw new Error(
+            "Fa√ßa login novamente para carregar os materiais."
         )
-
-    const snapshot =
-        await getDocs(consulta)
-
-    const estoquesAdmin =
-        new Map()
-
-    if (incluirEstoqueAdmin) {
-
-        const snapshotAdmin =
-            await getDocs(
-                query(
-                    collection(
-                        db,
-                        "resumosAdmin"
-                    ),
-                    where(
-                        "tipo",
-                        "==",
-                        "estoqueMaterial"
-                    )
-                )
-            )
-
-        snapshotAdmin.forEach(documento => {
-
-            const dados =
-                documento.data()
-
-            if (dados.ativo !== false) {
-
-                estoquesAdmin.set(
-                    dados.chaveMaterial,
-                    normalizarEstoqueAdminFirebase(documento)
-                )
-
-            }
-
-        })
 
     }
 
-    const materiais = []
+    const token =
+        await usuario.getIdToken(renovarToken)
 
-    snapshot.forEach(documento => {
+    const resposta =
+        await fetch(
+            `${MATERIAIS_API_BASE_URL}${caminho}`,
+            {
+                method:
+                    "GET",
+                cache:
+                    "no-cache",
+                headers:
+                    {
+                        Authorization:
+                            `Bearer ${token}`
+                    }
+            }
+        )
 
-        const material =
-            normalizarMaterialFirebase(
-                documento,
-                estoquesAdmin.get(documento.id) || null
-            )
+    if (
+        resposta.status === 401 &&
+        !renovarToken
+    ) {
 
-        if (material.ativo) {
+        return requisitarMateriaisVps(
+            caminho,
+            true
+        )
 
-            materiais.push(material)
+    }
+
+    if (!resposta.ok) {
+
+        let detalhe = ""
+
+        try {
+
+            const erro =
+                await resposta.json()
+
+            detalhe =
+                erro?.detail || ""
 
         }
 
-    })
+        catch (erroLeitura) {
 
-    return materiais
+            detalhe = ""
+
+        }
+
+        throw new Error(
+            detalhe ||
+            `A API de materiais respondeu com status ${resposta.status}.`
+        )
+
+    }
+
+    const payload =
+        await resposta.json()
+
+    if (!Array.isArray(payload?.materials)) {
+
+        throw new Error(
+            "A API de materiais retornou um formato inv√°lido."
+        )
+
+    }
+
+    return payload.materials
+
+}
+
+async function listarMateriaisVps(incluirEstoqueAdmin = false) {
+
+    if (incluirEstoqueAdmin) {
+
+        try {
+
+            return await requisitarMateriaisVps(
+                "/v1/app/admin/materials"
+            )
+
+        }
+
+        catch (erroAdmin) {
+
+            console.warn(
+                "Detalhes administrativos indispon√≠veis. Carregando cat√°logo comum:",
+                erroAdmin
+            )
+
+        }
+
+    }
+
+    return await requisitarMateriaisVps(
+        "/v1/app/materials"
+    )
 
 }
 
@@ -1628,7 +1556,7 @@ export {
     logoutFirebase,
     observarUsuarioLogado,
     buscarUsuarioFirebase,
-    listarMateriaisFirebase,
+    listarMateriaisVps,
     observarVersaoMateriaisFirebase,
     salvarSolicitacaoFirebase,
     listarMinhasSolicitacoesFirebase,
