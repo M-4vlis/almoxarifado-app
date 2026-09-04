@@ -71,9 +71,6 @@ const auth =
 const MATERIAIS_API_BASE_URL =
     "https://materiais.163-176-228-150.sslip.io"
 
-const cacheValoresMateriais =
-    new Map()
-
 // =========================
 // TRATAR MATRÍCULA
 // =========================
@@ -270,17 +267,6 @@ function formatarMoedaFirebase(valor) {
 // =========================
 // NORMALIZAR ID DE MATERIAL
 // =========================
-
-function normalizarIdMaterial(valor) {
-
-    return String(valor || "")
-        .trim()
-        .toUpperCase()
-        .replace(/[^A-Z0-9_-]/g, "_")
-        .replace(/_+/g, "_")
-        .replace(/^_+|_+$/g, "")
-
-}
 
 // =========================
 // BUSCAR USUÁRIO NO FIRESTORE
@@ -519,100 +505,11 @@ async function buscarValorUnitarioMaterial(item) {
 
     }
 
-    const codigo =
-        String(item?.codigo || "")
-            .trim()
-
-    const almoxarifado =
-        String(item?.almoxarifado || "")
-            .trim()
-
-    if (!codigo || !almoxarifado) {
-
-        return {
-            valorUnitario:
-                formatarMoedaFirebase(0),
-            valorUnitarioNumero:
-                0
-        }
-
-    }
-
-    const idMaterial =
-        `${codigo}_${normalizarIdMaterial(almoxarifado)}`
-
-    if (cacheValoresMateriais.has(idMaterial)) {
-
-        return cacheValoresMateriais.get(idMaterial)
-
-    }
-
-    try {
-
-        const referenciaMaterial =
-            doc(db, "materiais", idMaterial)
-
-        const snapshotMaterial =
-            await getDoc(referenciaMaterial)
-
-        if (!snapshotMaterial.exists()) {
-
-            const valorVazio = {
-                valorUnitario:
-                    formatarMoedaFirebase(0),
-                valorUnitarioNumero:
-                    0
-            }
-
-            cacheValoresMateriais.set(
-                idMaterial,
-                valorVazio
-            )
-
-            return valorVazio
-
-        }
-
-        const dadosMaterial =
-            snapshotMaterial.data()
-
-        const valorUnitarioNumero =
-            tratarNumero(
-                dadosMaterial.valorUnitarioNumero ||
-                dadosMaterial.valorUnitario
-            )
-
-        const valorMaterial = {
-            valorUnitario:
-                dadosMaterial.valorUnitario ||
-                formatarMoedaFirebase(valorUnitarioNumero),
-            valorUnitarioNumero:
-                valorUnitarioNumero
-        }
-
-        cacheValoresMateriais.set(
-            idMaterial,
-            valorMaterial
-        )
-
-        return valorMaterial
-
-    }
-
-    catch (erro) {
-
-        console.warn(
-            "Nao foi possivel buscar valor unitario do material:",
-            erro
-        )
-
-        return {
-            valorUnitario:
-                formatarMoedaFirebase(0),
-            valorUnitarioNumero:
-                0
-        }
-
+    return {
+        valorUnitario:
+            formatarMoedaFirebase(0),
+        valorUnitarioNumero:
+            0
     }
 
 }
