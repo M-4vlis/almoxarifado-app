@@ -69,7 +69,7 @@ const auth =
     getAuth(app)
 
 const MATERIAIS_API_BASE_URL =
-    "https://materiais.163-176-228-150.sslip.io"
+    "https://materiais.163-176-228-150.sslip.io:8443"
 
 // =========================
 // TRATAR MATRÍCULA
